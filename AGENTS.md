@@ -23,24 +23,40 @@ All autonomous agents modifying or executing workflows in this repository MUST f
 ## 2. v2.1 High-Performance Architecture Diagram
 
 ```mermaid
-flowchart TD
-    subgraph Controller ["Main Orchestrator Agent (Gemini 3.7 Flash)"]
-        A["Load config.yaml & data/history.json"] --> B["Start ThreadPoolExecutor (Adapters & CDP)"]
-        B --> D["Synchronized CDP RPC Collection Engine"]
-        B --> E1["Parallel Worker: GitHub Trending Adapter"]
-        B --> E2["Parallel Worker: Hacker News API Adapter"]
-        
-        D & E1 & E2 --> F["State Memory & Velocity Scoring (ΔViews/Δh, ΔBMs/Δh)"]
-        F --> G["Render 3-Part Markdown Report to reports/"]
-        G --> H["Dispatch Multi-Channel Webhooks (Slack/Discord/TG)"]
+flowchart LR
+    subgraph Sources ["1. Data Sources"]
+        direction TB
+        A1["X Precision Search Queries"]
+        A2["X Framework Searches"]
+        A3["GitHub Trending AI Repositories"]
+        A4["Hacker News AI Discussions"]
     end
 
-    subgraph BrowserSubagent ["Chrome CDP WebSocket (Port 9223)"]
-        D -->|Network.setBlockedURLs| C0["Block *.mp4, *.jpg, Trackers (60% Faster)"]
-        C0 -->|cdp_send_sync| C1["x.com/search?q=(AI OR Agents...)"]
-        C0 -->|cdp_send_sync| C2["x.com/search?q=(LangGraph...)"]
-        C0 -->|cdp_send_sync| C3["x.com/home"]
+    subgraph Core ["2. Analysis and Scoring Core"]
+        direction TB
+        B1["CDP Media and Resource Blocker"]
+        B2["State Memory History Cache"]
+        B3["Hourly Velocity Scoring Engine"]
+        B4["Thread and Link Parser"]
     end
+
+    subgraph Outputs ["3. Distribution"]
+        direction TB
+        C1["Daily Markdown Report"]
+        C2["Antigravity Chat Briefing"]
+        C3["Webhook Alerts to Slack, Discord, Telegram"]
+    end
+
+    A1 --> B1
+    A2 --> B1
+    A3 --> B3
+    A4 --> B3
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    B4 --> C2
+    B4 --> C3
 ```
 
 ---

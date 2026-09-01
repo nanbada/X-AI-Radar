@@ -45,29 +45,40 @@
 ## 🏗️ 시스템 아키텍처
 
 ```mermaid
-flowchart TD
-    subgraph DataSources ["1. 다중 타겟 수집 (~17s)"]
-        A1["X 정밀 검색: (AI OR Agents OR LLM OR MCP) min_faves:50"]
-        A2["X 프레임워크 검색: (LangGraph OR CrewAI OR AutoGen) min_faves:30"]
-        A3["GitHub Trending AI 오픈소스 (일일 TOP)"]
-        A4["Hacker News 인기 AI 토론 (Firebase API)"]
+flowchart LR
+    subgraph Sources ["1. 다중 데이터 소스"]
+        direction TB
+        A1["X 정밀 검색 쿼리"]
+        A2["X 프레임워크 쿼리"]
+        A3["GitHub Trending AI 레포지토리"]
+        A4["Hacker News 인기 AI 토론"]
     end
 
-    subgraph CoreEngine ["2. v2.1 코어 분석 및 랭킹 엔진"]
-        B1["CDP 리소스 블로커: *.mp4, *.jpg, 트래커 100% 차단 (60% 가속)"]
-        B2["상태 메모리 (data/history.json): 7일 증감분 캐시"]
-        B3["Velocity Engine: 시간당 조회수/북마크 증가 속도 (Δ/Δh)"]
-        B4["스레드 (1/n) 및 GitHub/ArXiv 링크 파서"]
+    subgraph Core ["2. v2.1 분석 및 랭킹 엔진"]
+        direction TB
+        B1["CDP 미디어 및 리소스 블로커"]
+        B2["상태 메모리 히스토리 캐시"]
+        B3["시간당 Velocity 점수 산출"]
+        B4["스레드 및 외부 링크 파서"]
     end
 
-    subgraph OutputHub ["3. 인텔리전스 배포"]
-        C1["일일 마크다운 리포트 (reports/x-ai-radar-YYYY-MM-DD.md)"]
-        C2["Antigravity 대화창 실시간 브리핑"]
-        C3["웹훅 자동 푸시: Slack / Discord / Telegram"]
+    subgraph Outputs ["3. 인텔리전스 배포"]
+        direction TB
+        C1["일일 마크다운 리포트"]
+        C2["Antigravity 실시간 브리핑"]
+        C3["웹훅 알림 푸시: Slack, Discord, Telegram"]
     end
 
-    DataSources --> CoreEngine
-    CoreEngine --> OutputHub
+    A1 --> B1
+    A2 --> B1
+    A3 --> B3
+    A4 --> B3
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    B4 --> C2
+    B4 --> C3
 ```
 
 ---

@@ -23,7 +23,7 @@
 - **⚡ Blazing Fast (~17s Full Run)**: Utilizes Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver complete reports in under 18 seconds.
 - **Zero-Cost & Ban-Free Ingestion**: Reuses your local Chrome session (Port 9223). No expensive API tiers ($100–$5,000/mo) or fragile scraping tokens.
 - **Precision Target Search**: Ingests high-signal AI posts via search operators (`min_faves:50`, `lang:en`) to completely filter out general algorithmic timeline noise.
-- **State Memory & Velocity-based Heat Scoring**: Tracks hourly growth delta ($\Delta\text{Views}/\Delta\text{h}$, $\Delta\text{Bookmarks}/\Delta\text{h}$) via `data/history.json` to prioritize breakout (`[RISING]`) topics over stale multi-day trends.
+- **State Memory & Velocity-based Heat Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics over stale multi-day trends.
 - **Thread & External Link Inspection**: Automatically identifies `1/n` technical threads and extracts embedded GitHub repositories and ArXiv research papers.
 - **Multi-Platform Intelligence Adapters**: Aggregates **GitHub Trending AI Repositories** and **Hacker News AI Discussions** into a unified 3-part daily executive brief.
 - **Multi-Channel Webhook Alerts**: Automatically pushes Top 3 daily highlights to Slack, Discord, and Telegram.
@@ -46,29 +46,40 @@
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart TD
-    subgraph DataSources ["1. Multi-Source Ingestion (~17s)"]
-        A1["X Precision Search: (AI OR Agents OR LLM OR MCP) min_faves:50"]
-        A2["X Framework Search: (LangGraph OR CrewAI OR AutoGen) min_faves:30"]
-        A3["GitHub Trending AI Repositories (Daily Top)"]
-        A4["Hacker News AI Discussions (Official Firebase API)"]
+flowchart LR
+    subgraph Sources ["1. Data Sources"]
+        direction TB
+        A1["X Precision Search Queries"]
+        A2["X Framework Searches"]
+        A3["GitHub Trending AI Repositories"]
+        A4["Hacker News AI Discussions"]
     end
 
-    subgraph CoreEngine ["2. v2.1 Analysis & Scoring Core"]
-        B1["CDP Resource Blocker: Discards *.mp4, *.jpg, Trackers (60% Faster)"]
-        B2["State Memory (data/history.json): 7-Day Metric Delta Tracker"]
-        B3["Velocity Engine: Hourly Rate of Views & Bookmarks (Δ/Δh)"]
-        B4["Thread (1/n) & GitHub/ArXiv Link Parser"]
+    subgraph Core ["2. v2.1 Analysis Engine"]
+        direction TB
+        B1["CDP Media and Resource Blocker"]
+        B2["State Memory History Cache"]
+        B3["Hourly Velocity Scoring Engine"]
+        B4["Thread and Link Parser"]
     end
 
-    subgraph OutputHub ["3. Intelligence Distribution"]
-        C1["Daily Markdown Artifact (reports/x-ai-radar-YYYY-MM-DD.md)"]
-        C2["Antigravity Interactive Chat Briefing"]
-        C3["Webhook Push: Slack / Discord / Telegram"]
+    subgraph Outputs ["3. Intelligence Distribution"]
+        direction TB
+        C1["Daily Markdown Report"]
+        C2["Antigravity Chat Briefing"]
+        C3["Webhook Alerts to Slack, Discord, Telegram"]
     end
 
-    DataSources --> CoreEngine
-    CoreEngine --> OutputHub
+    A1 --> B1
+    A2 --> B1
+    A3 --> B3
+    A4 --> B3
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    B4 --> C2
+    B4 --> C3
 ```
 
 ---
