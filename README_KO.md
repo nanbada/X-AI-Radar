@@ -10,6 +10,7 @@
   <a href="#-성능-벤치마크">성능 벤치마크</a> •
   <a href="#-시스템-아키텍처">시스템 아키텍처</a> •
   <a href="#-빠른-시작-가이드">빠른 시작</a> •
+  <a href="#-검색-이슈-및-주제-변경-방법">주제 변경 방법</a> •
   <a href="#-설정-커스터마이징">설정 커스터마이징</a> •
   <a href="#-보안-및-안전-수칙">보안 수칙</a> •
   <a href="./README.md">English Version</a>
@@ -108,6 +109,57 @@ X-AI-Radar/
 
 ---
 
+## 🎯 검색 이슈 및 주제 변경 방법 (Customization)
+
+`config.yaml` 파일만 수정하면 **로보틱스(Robotics), Web3, 헬스케어 AI, 퀀트 금융, 특정 모델(Claude, DeepSeek, Grok) 등** 원하는 모든 도메인으로 레이더를 손쉽게 전환할 수 있습니다.
+
+### 1. 탐색할 X 검색 쿼리 변경 (`browser.search_queries`)
+X(Twitter)의 공식 검색 연산자(`min_faves`, `lang`, `OR`/`AND`, `-filter:replies` 등)를 조합하여 원하는 URL을 등록합니다:
+
+```yaml
+browser:
+  search_queries:
+    # 예시 A: AI Agents & 추론 모델 집중 추적
+    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20Reasoning%20OR%20MCP)%20min_faves%3A50&f=live"
+    
+    # 예시 B: 로보틱스 & 피지컬 AI 도메인으로 변경
+    - "https://x.com/search?q=(Robotics%20OR%20Humanoid%20OR%20PhysicalAI)%20min_faves%3A30&f=live"
+    
+    # 예시 C: 한국어 테크/AI 토론 위주로 수집
+    - "https://x.com/search?q=(인공지능%20OR%20LLM%20OR%20에이전트)%20min_faves%3A10&f=live"
+```
+
+### 2. 가산점 키워드 지정 (`topics.boost_keywords`)
+해당 키워드가 본문에 포함되면 자동으로 **+150점의 Heat Score 보너스**와 함께 우선 순위 태그가 부여됩니다:
+
+```yaml
+topics:
+  primary:
+    - "Robotics"
+    - "Autonomous Agents"
+  boost_keywords:
+    - "Humanoid"
+    - "Physical AI"
+    - "ROS"
+    - "LangGraph"
+    - "MCP"
+```
+
+### 3. 노이즈 및 제외 키워드 관리 (`topics.exclude_keywords`)
+새로운 도메인에 불필요한 스팸, 스포츠, 무관한 이슈를 차단합니다:
+
+```yaml
+topics:
+  exclude_keywords:
+    - "airdrop"
+    - "giveaway"
+    - "memecoin"
+    - "football"
+    - "transfer"
+```
+
+---
+
 ## 🚀 빠른 시작 가이드
 
 ### 1단계: Chrome Remote Debugging 실행
@@ -141,12 +193,10 @@ IsDaemon: true
 ## ⚙️ 설정 커스터마이징 (`config.yaml`)
 
 ```yaml
-# 탐색할 X 검색 쿼리 설정
-browser:
-  cdp_port: 9223
-  search_queries:
-    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20LLM%20OR%20MCP)%20min_faves%3A50&f=live"
-    - "https://x.com/search?q=(LangGraph%20OR%20CrewAI%20OR%20AutoGen)%20min_faves%3A30&f=live"
+# 수집 윈도우 및 선정 개수
+filter:
+  window_hours: 24             # 최근 24시간 윈도우
+  top_select_count: 10         # 리포트에 수록할 Top 포스트 수
 
 # 상태 기억 및 Velocity 가중치
 memory:
@@ -157,7 +207,7 @@ memory:
 
 # 웹훅 알림 설정
 notifications:
-  enabled: true
+  enabled: false
   webhooks:
     slack: "https://hooks.slack.com/services/..."
     discord: "https://discord.com/api/webhooks/..."

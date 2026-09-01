@@ -11,6 +11,7 @@
   <a href="#-benchmark--performance">Benchmark</a> •
   <a href="#-architecture">Architecture</a> •
   <a href="#-quick-start">Quick Start</a> •
+  <a href="#-how-to-customize-search-topics--issues">Customizing Topics</a> •
   <a href="#-configuration">Configuration</a> •
   <a href="#-security--safety">Security</a> •
   <a href="./README_KO.md">한국어 문서 (Korean)</a>
@@ -109,6 +110,57 @@ X-AI-Radar/
 
 ---
 
+## 🎯 How to Customize Search Topics & Issues
+
+You can easily adapt X-AI-Radar to track any domain (e.g. **Robotics, Web3, Healthcare AI, Quant, or specific LLMs like Claude/DeepSeek**) by modifying `config.yaml`.
+
+### 1. Update Target Search Queries (`browser.search_queries`)
+X-AI-Radar supports official X/Twitter search operators (e.g. `min_faves`, `lang`, boolean `OR`/`AND`, `-filter:replies`):
+
+```yaml
+browser:
+  search_queries:
+    # Example A: Track AI Agents & Reasoning Models
+    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20Reasoning%20OR%20MCP)%20min_faves%3A50&f=live"
+    
+    # Example B: Track Robotics & Physical AI
+    - "https://x.com/search?q=(Robotics%20OR%20Humanoid%20OR%20PhysicalAI)%20min_faves%3A30&f=live"
+    
+    # Example C: Track Korean Tech / AI Discussions
+    - "https://x.com/search?q=(인공지능%20OR%20LLM%20OR%20에이전트)%20min_faves%3A10&f=live"
+```
+
+### 2. Customize Boost Keywords (+150 Score Bonus)
+Posts containing these keywords will receive an automatic **+150.0 point score bonus** and high-priority badge tags:
+
+```yaml
+topics:
+  primary:
+    - "Robotics"
+    - "Autonomous Agents"
+  boost_keywords:
+    - "Humanoid"
+    - "Physical AI"
+    - "ROS"
+    - "LangGraph"
+    - "MCP"
+```
+
+### 3. Configure Noise & Negative Keywords
+Prevent spam, unrelated sports, or coin shills from appearing in your reports:
+
+```yaml
+topics:
+  exclude_keywords:
+    - "airdrop"
+    - "giveaway"
+    - "memecoin"
+    - "football"
+    - "transfer"
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Launch Chrome in Remote Debugging Mode
@@ -139,15 +191,13 @@ IsDaemon: true
 
 ---
 
-## ⚙️ Configuration (`config.yaml`)
+## ⚙️ Configuration Reference (`config.yaml`)
 
 ```yaml
-# Target Search Queries
-browser:
-  cdp_port: 9223
-  search_queries:
-    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20LLM%20OR%20MCP)%20min_faves%3A50&f=live"
-    - "https://x.com/search?q=(LangGraph%20OR%20CrewAI%20OR%20AutoGen)%20min_faves%3A30&f=live"
+# Time Window & Top Count
+filter:
+  window_hours: 24             # Lookback window (last 24 hours)
+  top_select_count: 10         # Number of top posts to include
 
 # State Memory & Velocity Weights
 memory:
@@ -158,7 +208,7 @@ memory:
 
 # Multi-Channel Webhook Notifications
 notifications:
-  enabled: true
+  enabled: false
   webhooks:
     slack: "https://hooks.slack.com/services/..."
     discord: "https://discord.com/api/webhooks/..."
