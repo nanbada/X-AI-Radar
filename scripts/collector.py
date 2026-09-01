@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-X-AI-Radar Unified Autonomous Intelligence Engine (v2.0)
+X-AI-Radar High-Performance Intelligence Engine (v2.1)
 
-Key Features:
-- Multi-Source Ingestion: Targeted X Search queries & Home Timeline via Chrome CDP (Port 9223)
-- State Memory & Velocity-based Heat Scoring: Tracks hourly growth delta (data/history.json)
-- Thread (1/n) & GitHub/ArXiv Link Extraction
-- Multi-Platform Adapters: GitHub Trending AI & Hacker News AI Discussions
-- Multi-Channel Webhook Notifications: Slack, Discord, Telegram
+Optimizations:
+1. Synchronized CDP RPC Pipeline: Ensures zero message desync for Page.navigate and Runtime.evaluate.
+2. CDP Media & Resource Blocking: Blocks heavy video streams and high-res images to accelerate loading.
+3. Concurrent Adapter Execution: ThreadPoolExecutor fetches GitHub Trending & Hacker News in parallel.
+4. State Memory & Velocity Scoring: Computes hourly delta against data/history.json.
+5. Multi-Channel Webhooks: Dispatches executive alerts to Slack, Discord, and Telegram.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 import re
 import sys
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
 import yaml
@@ -40,40 +42,12 @@ SCORING = config.get("scoring", {})
 MEMORY_CFG = config.get("memory", {})
 HISTORY_PATH = os.path.join(os.path.dirname(__file__), "..", MEMORY_CFG.get("history_file", "data/history.json"))
 
-def get_x_page_ws():
-    """
-    Retrieves the WebSocket Debugger URL of an active X (x.com) page from Chrome CDP.
-    """
-    try:
-        url = f"http://127.0.0.1:{CDP_PORT}/json/list"
-        with urllib.request.urlopen(url, timeout=5) as res:
-            pages = json.loads(res.read().decode())
-        target = next((p for p in pages if "x.com" in p.get("url", "") and p.get("type") == "page"), None)
-        if target:
-            return target["webSocketDebuggerUrl"]
-    except Exception as e:
-        print(f"❌ Failed to reach Chrome CDP on port {CDP_PORT}: {e}", file=sys.stderr)
-    return None
-
-def parse_metric_str(s):
-    """
-    Parses metric string formats like '1.2K', '3.5M', or comma-separated integers.
-    """
-    if not s:
-        return 0
-    s = s.replace(",", "").strip().upper()
-    try:
-        if "K" in s:
-            return int(float(s.replace("K", "")) * 1000)
-        elif "M" in s:
-            return int(float(s.replace("M", "")) * 1000000)
-        elif "B" in s:
-            return int(float(s.replace("B", "")) * 1000000000)
-        else:
-            m = re.search(r'\d+', s)
-            return int(m.group()) if m else 0
-    except:
-        return 0
+# Patterns of heavy media and trackers to block
+BLOCKED_PATTERNS = [
+    "*.mp4", "*.m3u8", "*.ts", "*.mov",
+    "*.jpg", "*.jpeg", "*.webp",
+    "*analytics*", "*telemetry*", "*doubleclick*", "*google-analytics*"
+]
 
 EXTRACT_SCRIPT = """
 (() => {
@@ -106,7 +80,7 @@ EXTRACT_SCRIPT = """
                 isVerified = userEl.querySelector('svg[data-testid="icon-verified"]') !== null;
             }
             
-            // 3. Metric buttons (reply, retweet, like, bookmark)
+            // 3. Metric counters
             const getGroupMetric = (testId) => {
                 const el = art.querySelector(`button[data-testid="${testId}"]`) || art.querySelector(`a[data-testid="${testId}"]`);
                 if (!el) return '0';
@@ -118,12 +92,11 @@ EXTRACT_SCRIPT = """
             const likes = getGroupMetric('like');
             const bookmarks = getGroupMetric('bookmark');
             
-            // 4. View count
             let views = '0';
             const viewsEl = art.querySelector('a[href*="/analytics"]');
             if (viewsEl) views = viewsEl.innerText.trim() || '0';
             
-            // 5. External technical links (GitHub, ArXiv, HuggingFace)
+            // 4. External technical links (GitHub, ArXiv, HuggingFace)
             const extLinks = [];
             art.querySelectorAll('a[href^="http"]').forEach(a => {
                 const h = a.href;
@@ -157,52 +130,36 @@ EXTRACT_SCRIPT = """
 })()
 """
 
-def navigate_and_collect(ws, target_url, scroll_count=3):
-    """
-    Navigates to the specified target URL and collects tweet items with smooth scrolling.
-    """
-    print(f"  🔍 Navigating to: {target_url}")
-    nav_cmd = json.dumps({
-        "id": 1,
-        "method": "Page.navigate",
-        "params": {"url": target_url}
-    })
-    ws.send(nav_cmd)
-    time.sleep(3.0)
-    
-    collected = {}
-    for i in range(scroll_count):
-        req_id = i + 10
-        ws.send(json.dumps({
-            "id": req_id,
-            "method": "Runtime.evaluate",
-            "params": {"expression": EXTRACT_SCRIPT}
-        }))
-        res = json.loads(ws.recv())
-        val = res.get("result", {}).get("result", {}).get("value", "[]")
-        try:
-            batch = json.loads(val)
-            for item in batch:
-                key = item.get("tweetUrl") or (item.get("handle", "") + item.get("text", "")[:30])
-                if key not in collected:
-                    collected[key] = item
-        except:
-            pass
-        
-        # Smooth scroll down
-        ws.send(json.dumps({
-            "id": req_id + 100,
-            "method": "Runtime.evaluate",
-            "params": {"expression": "window.scrollBy(0, 1200)"}
-        }))
-        time.sleep(1.5)
-        
-    return list(collected.values())
+def get_x_page_ws():
+    try:
+        url = f"http://127.0.0.1:{CDP_PORT}/json/list"
+        with urllib.request.urlopen(url, timeout=5) as res:
+            pages = json.loads(res.read().decode())
+        target = next((p for p in pages if "x.com" in p.get("url", "") and p.get("type") == "page"), None)
+        if target:
+            return target["webSocketDebuggerUrl"]
+    except Exception as e:
+        print(f"❌ Failed to reach Chrome CDP on port {CDP_PORT}: {e}", file=sys.stderr)
+    return None
+
+def parse_metric_str(s):
+    if not s:
+        return 0
+    s = s.replace(",", "").strip().upper()
+    try:
+        if "K" in s:
+            return int(float(s.replace("K", "")) * 1000)
+        elif "M" in s:
+            return int(float(s.replace("M", "")) * 1000000)
+        elif "B" in s:
+            return int(float(s.replace("B", "")) * 1000000000)
+        else:
+            m = re.search(r'\d+', s)
+            return int(m.group()) if m else 0
+    except:
+        return 0
 
 def load_history():
-    """
-    Loads historical post snapshots from data/history.json.
-    """
     if os.path.exists(HISTORY_PATH):
         try:
             with open(HISTORY_PATH, "r", encoding="utf-8") as f:
@@ -212,9 +169,6 @@ def load_history():
     return {}
 
 def save_history(history):
-    """
-    Persists updated history snapshots, pruning entries older than max_history_days.
-    """
     os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
     cutoff = datetime.now(timezone.utc) - timedelta(days=MEMORY_CFG.get("max_history_days", 7))
     cleaned = {}
@@ -230,9 +184,6 @@ def save_history(history):
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
 
 def is_within_24h(time_str):
-    """
-    Verifies if a post was published within the configured time window (default 24h).
-    """
     if not time_str:
         return True
     try:
@@ -254,12 +205,9 @@ def is_within_24h(time_str):
     return True
 
 def calculate_velocity_score(post, history):
-    """
-    Calculates the Velocity-based Heat Score using historical metrics and topic bonuses.
-    """
     text_lower = post["text"].lower()
     
-    # Exclude noise and spam keywords
+    # Exclude keywords filter
     for ex in EXCLUDE_KEYWORDS:
         if ex in text_lower:
             return -9999.0
@@ -272,7 +220,7 @@ def calculate_velocity_score(post, history):
     # Thread indicator detection
     is_thread = bool(re.search(r'\b(1/\d+|1/n|🧵)\b', text_lower) or text_lower.endswith('1/'))
     
-    # Topic boost bonus
+    # Topic boost bonuses
     bonus = 0.0
     matched_tags = []
     for kw in BOOST_KEYWORDS:
@@ -292,7 +240,7 @@ def calculate_velocity_score(post, history):
                 bonus += 150.0
                 matched_tags.append("ARXIV 📄")
                 
-    # Velocity calculation against history snapshot
+    # Velocity metric computation
     now_iso = datetime.now(timezone.utc).isoformat()
     post_id = post.get("tweetUrl") or (post["handle"] + post["text"][:30])
     
@@ -310,7 +258,6 @@ def calculate_velocity_score(post, history):
             delta_views = max(0, views - prev.get("views", 0))
             delta_bookmarks = max(0, bookmarks - prev.get("bookmarks", 0))
             
-            # Growth velocity formula: (ΔViews/Δh * w) + (ΔBookmarks/Δh * w)
             vel_views_w = MEMORY_CFG.get("velocity_weight_views", 0.2)
             vel_bm_w = MEMORY_CFG.get("velocity_weight_bookmarks", 5.0)
             score = ((delta_views / delta_hours) * vel_views_w) + ((delta_bookmarks / delta_hours) * vel_bm_w) + bonus + (likes * 0.5)
@@ -322,10 +269,9 @@ def calculate_velocity_score(post, history):
         views_per_hour = views / float(WINDOW_HOURS)
         score = (views_per_hour * w_views) + (likes * w_likes) + (reposts * w_reposts) + (bookmarks * w_bookmarks) + bonus
         
-    if score > 20000:
+    if score > 15000:
         badge = "🔥 HOT"
         
-    # Update post structure
     post["heatScore"] = round(score, 1)
     post["badge"] = badge
     post["parsedMetrics"] = {
@@ -345,37 +291,106 @@ def calculate_velocity_score(post, history):
     }
     return score
 
+def cdp_send_sync(ws, method, params=None, msg_id=1):
+    """
+    Sends a CDP command and synchronously receives its matching response.
+    """
+    payload = {"id": msg_id, "method": method}
+    if params:
+        payload["params"] = params
+    ws.send(json.dumps(payload))
+    while True:
+        raw = ws.recv()
+        try:
+            res = json.loads(raw)
+            if res.get("id") == msg_id:
+                return res
+        except:
+            pass
+
+def navigate_and_extract(ws, url, scroll_count=3):
+    print(f"  🔍 Navigating to: {url}")
+    # Synchronously navigate
+    cdp_send_sync(ws, "Page.navigate", {"url": url}, msg_id=100)
+    time.sleep(2.5)
+    
+    collected_dict = {}
+    for i in range(scroll_count):
+        req_id = 200 + i * 10
+        res = cdp_send_sync(ws, "Runtime.evaluate", {"expression": EXTRACT_SCRIPT}, msg_id=req_id)
+        val = res.get("result", {}).get("result", {}).get("value", "[]")
+        try:
+            batch = json.loads(val)
+            for item in batch:
+                key = item.get("tweetUrl") or (item.get("handle", "") + item.get("text", "")[:30])
+                if key not in collected_dict:
+                    collected_dict[key] = item
+        except:
+            pass
+            
+        # Smooth scroll
+        cdp_send_sync(ws, "Runtime.evaluate", {"expression": "window.scrollBy(0, 1200)"}, msg_id=req_id + 1)
+        time.sleep(1.0)
+        
+    return list(collected_dict.values())
+
 def main():
-    print(f"📡 [X-AI-Radar v2.0] Initializing multi-source collection (Port: {CDP_PORT})...")
+    start_time = time.time()
+    print(f"⚡ [X-AI-Radar v2.1] Initializing High-Speed Collection Engine (Port: {CDP_PORT})...")
+    
+    # 1. Parallel thread pool for external adapters (GitHub + Hacker News)
+    executor = ThreadPoolExecutor(max_workers=3)
+    gh_future = executor.submit(fetch_trending_ai_repos, limit=config.get("adapters", {}).get("github_trending", {}).get("limit", 5))
+    hn_future = executor.submit(fetch_top_hn_ai_stories, limit=config.get("adapters", {}).get("hackernews", {}).get("limit", 5))
+    
+    # 2. Connect to active X CDP WebSocket
     ws_url = get_x_page_ws()
     if not ws_url:
         print(f"❌ Could not connect to Chrome CDP on port {CDP_PORT}.", file=sys.stderr)
         return
         
     ws = websocket.create_connection(ws_url)
-    all_raw_posts = {}
     
-    # 1. Collect from target search queries
+    # Enable Network & block heavy media patterns
+    cdp_send_sync(ws, "Network.enable", msg_id=1)
+    cdp_send_sync(ws, "Network.setBlockedURLs", {"urls": BLOCKED_PATTERNS}, msg_id=2)
+    
+    # Ingest search queries and timeline
+    all_raw_posts = {}
     search_queries = config.get("browser", {}).get("search_queries", [])
     for sq in search_queries:
-        posts = navigate_and_collect(ws, sq, scroll_count=3)
+        posts = navigate_and_extract(ws, sq, scroll_count=3)
         for p in posts:
             key = p.get("tweetUrl") or (p["handle"] + p["text"][:30])
             if key not in all_raw_posts:
                 all_raw_posts[key] = p
                 
-    # 2. Collect from Home timeline if enabled
     if config.get("browser", {}).get("include_home_timeline", True):
-        posts = navigate_and_collect(ws, "https://x.com/home", scroll_count=3)
+        posts = navigate_and_extract(ws, "https://x.com/home", scroll_count=3)
         for p in posts:
             key = p.get("tweetUrl") or (p["handle"] + p["text"][:30])
             if key not in all_raw_posts:
                 all_raw_posts[key] = p
                 
     ws.close()
-    print(f"📊 Collected {len(all_raw_posts)} total deduplicated posts from all X sources.")
+    print(f"📊 Collected {len(all_raw_posts)} total deduplicated posts from X sources.")
     
-    # 3. Calculate Velocity & Filter with Memory
+    # 3. Retrieve parallel adapter results
+    try:
+        github_repos = gh_future.result(timeout=6)
+    except Exception as e:
+        print(f"⚠️ GitHub adapter error: {e}", file=sys.stderr)
+        github_repos = []
+        
+    try:
+        hn_stories = hn_future.result(timeout=6)
+    except Exception as e:
+        print(f"⚠️ Hacker News adapter error: {e}", file=sys.stderr)
+        hn_stories = []
+        
+    executor.shutdown(wait=False)
+    
+    # 4. State Memory & Velocity Scoring
     history = load_history()
     valid_posts = []
     for p in all_raw_posts.values():
@@ -388,24 +403,13 @@ def main():
     valid_posts.sort(key=lambda x: x["heatScore"], reverse=True)
     top_x_posts = valid_posts[:TOP_SELECT_COUNT]
     
-    # 4. Fetch Multi-Platform Adapters
-    github_repos = []
-    if config.get("adapters", {}).get("github_trending", {}).get("enabled", True):
-        print("🐙 Fetching GitHub Trending AI repositories...")
-        github_repos = fetch_trending_ai_repos(limit=config["adapters"]["github_trending"].get("limit", 5))
-        
-    hn_stories = []
-    if config.get("adapters", {}).get("hackernews", {}).get("enabled", True):
-        print("💬 Fetching Hacker News AI discussions...")
-        hn_stories = fetch_top_hn_ai_stories(limit=config["adapters"]["hackernews"].get("limit", 5))
-        
-    # 5. Render Integrated Report
+    # 5. Render v2.1 Integrated Report
     today_str = datetime.now().strftime("%Y-%m-%d")
     out_dir = os.path.join(os.path.dirname(__file__), "..", "reports")
     os.makedirs(out_dir, exist_ok=True)
     report_file = os.path.join(out_dir, f"x-ai-radar-{today_str}.md")
     
-    # Render X table rows and deep dives
+    # Render X table rows & deep dives
     x_table_rows = []
     x_deep_dives = []
     for i, p in enumerate(top_x_posts, 1):
@@ -439,7 +443,7 @@ def main():
     for i, h in enumerate(hn_stories, 1):
         hn_rows.append(f"| **{i}** | [{h['title']}]({h['url']}) | 🔺 {h['score']} pts / 💬 {h['comments_count']} comments | @{h['by']} | [HN Discussion]({h['hn_url']}) |")
 
-    # Metrics summary calculation
+    # Metrics summary
     new_count = sum(1 for p in top_x_posts if "NEW" in p.get("badge", ""))
     rising_count = sum(1 for p in top_x_posts if "RISING" in p.get("badge", "") or "HOT" in p.get("badge", ""))
     new_ratio = round((new_count / max(1, len(top_x_posts))) * 100, 1)
@@ -469,18 +473,19 @@ def main():
     with open(report_file, "w", encoding="utf-8") as f:
         f.write(report_md)
         
-    print(f"🎉 v2.0 Report generated successfully at {report_file}")
+    elapsed = time.time() - start_time
+    print(f"🎉 [v2.1 Engine] Complete pipeline finished in {elapsed:.2f}s! (Report: {report_file})")
     
-    # 6. Dispatch Webhook notifications if configured
-    summary_data = {
+    # 6. Webhook Notifications
+    send_notifications({
         "date": today_str,
         "report_file": report_file,
         "top_posts": top_x_posts
-    }
-    send_notifications(summary_data)
+    })
     
     print("---SUMMARY_JSON_START---")
     print(json.dumps({
+        "execution_time_seconds": round(elapsed, 2),
         "report_file": report_file,
         "total_x_collected": len(all_raw_posts),
         "top_x_count": len(top_x_posts),
