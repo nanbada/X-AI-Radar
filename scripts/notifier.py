@@ -2,13 +2,14 @@
 """
 Multi-Channel Webhook Notifier for X-AI-Radar
 Dispatches Top 3 Daily Highlights to Slack, Discord, and Telegram endpoints.
-Supports loading secrets securely from local .env or config.yaml.
+Translates foreign language posts into natural Korean for the user.
 """
 
 import html
 import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 import yaml
 
@@ -24,9 +25,25 @@ def load_env_file():
                     env_vars[k.strip()] = v.strip().strip('"').strip("'")
     return env_vars
 
+def translate_to_korean(text):
+    """
+    Translates English / foreign text into Korean using fast, zero-dependency translation.
+    """
+    if not text:
+        return ""
+    try:
+        url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ko&dt=t&q=" + urllib.parse.quote(text[:300])
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
+        with urllib.request.urlopen(req, timeout=4) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            return "".join([part[0] for part in data[0] if part[0]])
+    except Exception as e:
+        print(f"⚠️ Translation fallback ({e})", file=sys.stderr)
+        return text
+
 def send_notifications(summary_data):
     """
-    Reads webhook configurations and sends formatted alerts.
+    Reads webhook configurations and sends formatted alerts with Korean translation.
     """
     config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
     if not os.path.exists(config_path):
@@ -50,21 +67,25 @@ def send_notifications(summary_data):
     today_str = summary_data.get("date", "Today")
     report_file = summary_data.get("report_file", "")
     
-    # Compose Plain / Markdown Text for Slack & Discord
+    # 1. Slack / Discord Markdown Text (with Korean Translation)
     lines = [
-        f"📡 *[X-AI-Radar] AI & Agents Daily Radar ({today_str})*",
-        f"🔗 Full Report: `{report_file}`",
+        f"📡 *[X-AI-Radar] AI & Agents 데일리 핫이슈 ({today_str})*",
+        f"📁 전체 리포트: `{os.path.basename(report_file)}`",
         "───────────────────────────────"
     ]
     for i, p in enumerate(top_posts, 1):
         m = p.get("parsedMetrics", {})
-        lines.append(f"*{i}. {p.get('handle')}* (Score: {p.get('heatScore'):,}) | {m.get('views',0):,} Views")
-        lines.append(f"> {p.get('text', '')[:140].replace(chr(10), ' ')}...")
-        lines.append(f"<{p.get('tweetUrl')}|View Tweet>\n")
+        badge = p.get("badge", "✨ NEW")
+        raw_text = p.get("text", "")[:160]
+        ko_text = translate_to_korean(raw_text).replace("\n", " ")
+        
+        lines.append(f"*{i}. {p.get('handle')}* `[{badge}]` (점수: {p.get('heatScore'):,})")
+        lines.append(f"• 지표: {m.get('views',0):,} Views | {m.get('likes',0):,} Likes | {m.get('bookmarks',0):,} BMs")
+        lines.append(f"> 🇰🇷 *요약*: {ko_text}")
+        lines.append(f"<{p.get('tweetUrl')}|원문 트윗 보기>\n")
         
     msg_text = "\n".join(lines)
     
-    # 1. Slack Webhook Dispatch
     if slack_url and slack_url.startswith("http"):
         try:
             payload = json.dumps({"text": msg_text}).encode("utf-8")
@@ -74,7 +95,6 @@ def send_notifications(summary_data):
         except Exception as e:
             print(f"⚠️ Slack notification error: {e}", file=sys.stderr)
             
-    # 2. Discord Webhook Dispatch
     if discord_url and discord_url.startswith("http"):
         try:
             payload = json.dumps({"content": msg_text.replace("*", "**")}).encode("utf-8")
@@ -84,25 +104,26 @@ def send_notifications(summary_data):
         except Exception as e:
             print(f"⚠️ Discord notification error: {e}", file=sys.stderr)
             
-    # 3. Telegram Bot Dispatch (HTML Mode for robust parsing)
+    # 2. Telegram Bot Dispatch (HTML Mode with Korean Translation)
     if tg_token and tg_chat_id:
         try:
             tg_lines = [
-                f"📡 <b>[X-AI-Radar] AI &amp; Agents Daily Radar ({html.escape(today_str)})</b>",
-                f"📁 <i>Report: {html.escape(os.path.basename(report_file))}</i>",
+                f"📡 <b>[X-AI-Radar] 오늘의 AI &amp; Agents 핫이슈 요약 ({html.escape(today_str)})</b>",
+                f"📁 <i>전체 리포트: {html.escape(os.path.basename(report_file))}</i>",
                 "───────────────────────────────"
             ]
             for i, p in enumerate(top_posts, 1):
                 m = p.get("parsedMetrics", {})
                 badge = p.get("badge", "✨ NEW")
                 handle = html.escape(str(p.get("handle", "@user")))
-                snippet = html.escape(str(p.get("text", "")[:130]).replace("\n", " "))
+                raw_text = str(p.get("text", "")[:160])
+                ko_text = html.escape(translate_to_korean(raw_text).replace("\n", " "))
                 url = p.get("tweetUrl") or f"https://x.com/{handle.replace('@', '')}"
                 
-                tg_lines.append(f"<b>{i}. {handle}</b> <code>[{badge}]</code> (Score: {p.get('heatScore'):,})")
+                tg_lines.append(f"<b>{i}. {handle}</b> <code>[{badge}]</code> (열도 점수: {p.get('heatScore'):,})")
                 tg_lines.append(f"👁 {m.get('views', 0):,} Views | ❤️ {m.get('likes', 0):,} Likes | 🔖 {m.get('bookmarks', 0):,} BMs")
-                tg_lines.append(f"💬 <i>\"{snippet}...\"</i>")
-                tg_lines.append(f"🔗 <a href=\"{url}\">View on X</a>\n")
+                tg_lines.append(f"🇰🇷 <b>핵심 요약</b>: <i>\"{ko_text}...\"</i>")
+                tg_lines.append(f"🔗 <a href=\"{url}\">트윗 원문 보기</a>\n")
                 
             tg_html = "\n".join(tg_lines)
             
@@ -115,7 +136,7 @@ def send_notifications(summary_data):
             }).encode("utf-8")
             req = urllib.request.Request(tg_url, data=payload, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=8) as res:
-                print("✅ Live Report dispatched successfully to Telegram!")
+                print("✅ Live Korean-translated Report dispatched to Telegram!")
         except Exception as e:
             print(f"⚠️ Telegram notification error: {e}", file=sys.stderr)
 
@@ -130,9 +151,17 @@ if __name__ == "__main__":
                 "handle": "@farzyness",
                 "heatScore": 6466.0,
                 "badge": "🚀 RISING",
-                "text": "The ultimate Grok @bot set up for me is to filter EVERYTHING through one agent and hide everything else. Master agent coordinates specialized sub-agents...",
+                "text": "The ultimate Grok @bot set up for me is to filter EVERYTHING through one agent and hide everything else. That master agent coordinates specialized sub-agents for your process and life.",
                 "tweetUrl": "https://x.com/farzyness/status/2094810782697398294",
                 "parsedMetrics": {"views": 69000, "likes": 332, "bookmarks": 42}
+            },
+            {
+                "handle": "@binance",
+                "heatScore": 1353.0,
+                "badge": "🚀 RISING",
+                "text": "Introducing the Binance Agent OS Mini Hackathon. $60,000 USDC Prize Pool: Build an AI agent with Agent OS & connect your MCPs to trade automatically.",
+                "tweetUrl": "https://x.com/binance/status/2094810011557838988",
+                "parsedMetrics": {"views": 78000, "likes": 106, "bookmarks": 85}
             }
         ]
     }
