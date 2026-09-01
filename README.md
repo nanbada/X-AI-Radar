@@ -47,25 +47,25 @@
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart TD
-    subgraph Sources["1. Data Sources"]
-        A1["X Precision Search Queries"]
-        A2["X Framework Searches"]
-        A3["GitHub Trending AI Repositories"]
-        A4["Hacker News AI Discussions"]
+graph TD
+    subgraph S1 [1. Data Sources]
+        A1[X Precision Search Queries]
+        A2[X Framework Searches]
+        A3[GitHub Trending AI Repositories]
+        A4[Hacker News AI Discussions]
     end
 
-    subgraph Core["2. Analysis & Scoring Engine"]
-        B1["CDP Media & Resource Blocker"]
-        B2["State Memory History Cache"]
-        B3["Hourly Velocity Scoring Engine"]
-        B4["Thread & Link Parser"]
+    subgraph S2 [2. Analysis and Scoring Engine]
+        B1[CDP Media and Resource Blocker]
+        B2[State Memory History Cache]
+        B3[Hourly Velocity Scoring Engine]
+        B4[Thread and Link Parser]
     end
 
-    subgraph Outputs["3. Intelligence Distribution"]
-        C1["Daily Markdown Report"]
-        C2["Antigravity Chat Briefing"]
-        C3["Webhook Alerts: Slack / Discord / Telegram"]
+    subgraph S3 [3. Intelligence Distribution]
+        C1[Daily Markdown Report]
+        C2[Antigravity Chat Briefing]
+        C3[Webhook Alerts to Slack, Discord, Telegram]
     end
 
     A1 --> B1

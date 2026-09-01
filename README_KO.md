@@ -46,25 +46,25 @@
 ## 🏗️ 시스템 아키텍처
 
 ```mermaid
-flowchart TD
-    subgraph Sources["1. 다중 데이터 소스"]
-        A1["X 정밀 검색 쿼리"]
-        A2["X 프레임워크 쿼리"]
-        A3["GitHub Trending AI 레포지토리"]
-        A4["Hacker News 인기 AI 토론"]
+graph TD
+    subgraph S1 [1. 다중 데이터 소스]
+        A1[X 정밀 검색 쿼리]
+        A2[X 프레임워크 쿼리]
+        A3[GitHub Trending AI 레포지토리]
+        A4[Hacker News 인기 AI 토론]
     end
 
-    subgraph Core["2. 분석 및 랭킹 엔진"]
-        B1["CDP 미디어 및 리소스 블로커"]
-        B2["상태 메모리 히스토리 캐시"]
-        B3["시간당 Velocity 점수 산출"]
-        B4["스레드 및 외부 링크 파서"]
+    subgraph S2 [2. 분석 및 랭킹 엔진]
+        B1[CDP 미디어 및 리소스 블로커]
+        B2[상태 메모리 히스토리 캐시]
+        B3[시간당 Velocity 점수 산출]
+        B4[스레드 및 외부 링크 파서]
     end
 
-    subgraph Outputs["3. 인텔리전스 배포"]
-        C1["일일 마크다운 리포트"]
-        C2["Antigravity 실시간 브리핑"]
-        C3["웹훅 알림: Slack / Discord / Telegram"]
+    subgraph S3 [3. 인텔리전스 배포]
+        C1[일일 마크다운 리포트]
+        C2[Antigravity 실시간 브리핑]
+        C3[웹훅 알림 푸시]
     end
 
     A1 --> B1
