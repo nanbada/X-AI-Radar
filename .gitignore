@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data & History (Prevent publishing historical tracking caches)
+data/*.json
+!data/.gitkeep
+
+# Environment variables & secrets
+.env
+.env.*
+*.secret
+
+# Chrome User Data & Debugging profiles
+*chrome_agent_profile*
+chrome_debug_profile/
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs & Temporary files
+*.log
+scratch/
+tmp/

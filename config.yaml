@@ -1,0 +1,112 @@
+adapters:
+  github_trending:
+    enabled: true
+    limit: 5
+    topics:
+    - ai
+    - llm
+    - agents
+    - machine-learning
+  hackernews:
+    enabled: true
+    keywords:
+    - AI
+    - LLM
+    - Agent
+    - OpenAI
+    - Anthropic
+    - Claude
+    - DeepSeek
+    limit: 5
+browser:
+  action_mode: read_only
+  cdp_host: 127.0.0.1
+  cdp_port: 9223
+  include_home_timeline: true
+  profile_dir: $HOME/chrome_agent_profile
+  scroll_iterations: 3
+  search_queries:
+  - https://x.com/search?q=(AI%20OR%20Agents%20OR%20LLM%20OR%20MCP)%20min_faves%3A50&f=live
+  - https://x.com/search?q=(LangGraph%20OR%20CrewAI%20OR%20AutoGen%20OR%20BrowserSubagent)%20min_faves%3A30&f=live
+filter:
+  candidate_pool_size: 40
+  min_bookmarks: 20
+  min_likes: 50
+  min_views: 10000
+  top_select_count: 10
+  window_hours: 24
+memory:
+  enabled: true
+  history_file: data/history.json
+  max_history_days: 7
+  velocity_weight_bookmarks: 5.0
+  velocity_weight_views: 0.2
+notifications:
+  enabled: false
+  webhooks:
+    discord: ''
+    slack: ''
+    telegram_bot_token: ''
+    telegram_chat_id: ''
+project:
+  description: X(Twitter) & Multi-Source 24h AI/Agents Intelligence Radar
+  name: x-ai-radar
+  version: 2.0.0
+schedule:
+  cron: 15 8 * * *
+  timezone: Asia/Seoul
+scoring:
+  keyword_bonus: 150.0
+  weight_bookmarks: 3.0
+  weight_likes: 1.0
+  weight_reposts: 2.5
+  weight_views_per_hour: 0.1
+topics:
+  boost_keywords:
+  - Agent
+  - Agents
+  - Multi-Agent
+  - LangChain
+  - LangGraph
+  - CrewAI
+  - AutoGen
+  - MCP
+  - Model Context Protocol
+  - Function Calling
+  - Tool Calling
+  - Computer Use
+  - Browser Subagent
+  - Context Window
+  - Reasoning
+  - Gemini
+  - Claude
+  - OpenAI
+  - DeepSeek
+  - Qwen
+  exclude_keywords:
+  - player's agents
+  - premier league
+  - player's agent
+  - presale
+  - memecoin
+  - lyon winger
+  - telegram bot buy
+  - soccer
+  - football
+  - transfer
+  - sunderland
+  - giveaway
+  - airdrop
+  - pump
+  - crystal palace
+  - whitelist
+  - nfl
+  - nba
+  - deadline day
+  - crypto drop
+  primary:
+  - AI
+  - AI Agents
+  - Autonomous Agents
+  - LLM
+  - MCP
