@@ -3,14 +3,15 @@
 <p align="center">
   <b>Multi-Source Autonomous AI & Agents Intelligence Radar</b><br>
   Powered by <b>Antigravity Browser Subagent (<code>/browser</code>)</b> and <b>Gemini 3.7 Flash</b>.<br>
-  <i>⚡ High-Speed Engine: Ingests X, GitHub Trending, and Hacker News in ~17 seconds.</i>
+  <i>⚡ High-Speed Engine: Ingests X, GitHub Trending, and Hacker News in ~17 seconds.</i><br>
+  <i>💻 100% Cross-Platform: macOS, Windows, and Linux Supported.</i>
 </p>
 
 <p align="center">
   <a href="#-key-features">Key Features</a> •
   <a href="#-benchmark--performance">Benchmark</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-quick-start">Quick Start (macOS / Windows / Linux)</a> •
   <a href="#-how-to-customize-search-topics--issues">Customizing Topics</a> •
   <a href="#-configuration">Configuration</a> •
   <a href="#-security--safety">Security</a> •
@@ -22,12 +23,13 @@
 ## 🌟 Key Features
 
 - **⚡ Blazing Fast (~17s Full Run)**: Utilizes Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver complete reports in under 18 seconds.
+- **💻 Cross-Platform (macOS / Windows / Linux)**: Dedicated one-click launchers for macOS/Linux (`.sh`), Windows Batch (`.bat`), and PowerShell (`.ps1`).
 - **Zero-Cost & Ban-Free Ingestion**: Reuses your local Chrome session (Port 9223). No expensive API tiers ($100–$5,000/mo) or fragile scraping tokens.
 - **Precision Target Search**: Ingests high-signal AI posts via search operators (`min_faves:50`, `lang:en`) to completely filter out general algorithmic timeline noise.
 - **State Memory & Velocity-based Heat Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics over stale multi-day trends.
 - **Thread & External Link Inspection**: Automatically identifies `1/n` technical threads and extracts embedded GitHub repositories and ArXiv research papers.
 - **Multi-Platform Intelligence Adapters**: Aggregates **GitHub Trending AI Repositories** and **Hacker News AI Discussions** into a unified 3-part daily executive brief.
-- **Multi-Channel Webhook Alerts**: Automatically pushes Top 3 daily highlights to Slack, Discord, and Telegram.
+- **Multi-Channel Webhook & Telegram Bot**: Automatically translates foreign posts into Korean and pushes summaries to Telegram (`@Radar4All_bot`), Slack, and Discord.
 - **Strictly Read-Only (100% Safe)**: Enforces zero-mutation policy (no likes, retweets, replies, or follows).
 
 ---
@@ -92,20 +94,68 @@ X-AI-Radar/
 ├── README.md                  # English documentation
 ├── README_KO.md               # Korean documentation (한국어 가이드)
 ├── .gitignore                 # Security & secret isolation rules
+├── .env                       # Local secrets (Telegram bot token & chat id, git-ignored)
 ├── data/
 │   ├── .gitkeep
 │   └── history.json           # Local cache for state memory & velocity tracking (ignored)
 ├── scripts/
 │   ├── collector.py           # Core v2.1 high-speed multi-source engine (~17s)
-│   ├── notifier.py            # Slack / Discord / Telegram webhook dispatcher
-│   ├── launch_chrome.sh       # Chrome Remote Debugging (Port 9223) launcher
-│   ├── run_radar.sh           # Environment health checker & manual CLI runner
+│   ├── notifier.py            # Slack / Discord / Telegram webhook dispatcher (with Korean translation)
+│   ├── launch_chrome.sh       # Chrome launcher for macOS / Linux
+│   ├── launch_chrome.bat      # Chrome launcher for Windows (CMD)
+│   ├── launch_chrome.ps1      # Chrome launcher for Windows (PowerShell)
+│   ├── run_radar.sh           # Environment checker & runner for macOS / Linux
+│   ├── run_radar.bat          # Environment checker & runner for Windows
 │   └── adapters/
 │       ├── github_trending.py # GitHub Trending AI adapter
 │       └── hackernews.py      # Hacker News AI discussions adapter
 ├── templates/
 │   └── report_template.md     # 3-part comprehensive markdown report template
 └── reports/                   # Daily generated reports (x-ai-radar-YYYY-MM-DD.md)
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Launch Chrome in Remote Debugging Mode (Port 9223)
+
+* **macOS / Linux**:
+  ```bash
+  ./scripts/launch_chrome.sh
+  ```
+* **Windows (Command Prompt / Double Click)**:
+  ```cmd
+  scripts\launch_chrome.bat
+  ```
+* **Windows (PowerShell)**:
+  ```powershell
+  .\scripts\launch_chrome.ps1
+  ```
+
+> [!NOTE]
+> In the opened Chrome window, perform a **one-time login to X.com**. The session is saved in an isolated directory (`chrome_agent_profile`) and will be reused automatically.
+
+### 2. Run X-AI-Radar
+
+* **In Antigravity Chat**:
+  ```text
+  /x-ai-radar
+  ```
+* **Via Terminal / Command Prompt**:
+  ```bash
+  python scripts/collector.py
+  ```
+* **Windows One-Click Runner**:
+  Double-click `scripts\run_radar.bat`
+
+### 3. Schedule Daily Autonomous Execution (08:15 KST)
+Register the recurring task with Antigravity:
+```text
+/schedule
+CronExpression: "15 8 * * *"
+Prompt: "/x-ai-radar"
+IsDaemon: true
 ```
 
 ---
@@ -161,36 +211,6 @@ topics:
 
 ---
 
-## 🚀 Quick Start
-
-### 1. Launch Chrome in Remote Debugging Mode
-Launch an isolated Chrome profile on port 9223. Perform a **one-time manual login to X (Twitter)** in the opened browser window:
-
-```bash
-./scripts/launch_chrome.sh
-```
-
-### 2. Run X-AI-Radar Manually
-In your Antigravity chat, type:
-```text
-/x-ai-radar
-```
-Or execute directly from your terminal:
-```bash
-python3 scripts/collector.py
-```
-
-### 3. Schedule Daily Autonomous Execution (08:15 KST)
-Register the recurring task with Antigravity:
-```text
-/schedule
-CronExpression: "15 8 * * *"
-Prompt: "/x-ai-radar"
-IsDaemon: true
-```
-
----
-
 ## ⚙️ Configuration Reference (`config.yaml`)
 
 ```yaml
@@ -206,14 +226,14 @@ memory:
   velocity_weight_views: 0.2
   velocity_weight_bookmarks: 5.0
 
-# Multi-Channel Webhook Notifications
+# Multi-Channel Webhook Notifications (.env or config.yaml)
 notifications:
-  enabled: false
+  enabled: true
   webhooks:
-    slack: "https://hooks.slack.com/services/..."
-    discord: "https://discord.com/api/webhooks/..."
-    telegram_bot_token: "YOUR_BOT_TOKEN"
-    telegram_chat_id: "YOUR_CHAT_ID"
+    slack: ""
+    discord: ""
+    telegram_bot_token: ""     # Automatically loaded from .env
+    telegram_chat_id: ""       # Automatically loaded from .env
 ```
 
 ---
@@ -221,7 +241,7 @@ notifications:
 ## 🛡️ Security & Safety
 
 1. **Zero-Mutation Guardrail**: The engine strictly executes DOM reads and navigation. All write operations (like, retweet, reply, bookmark, follow) are hard-disabled.
-2. **Profile Isolation**: Uses a dedicated `--user-data-dir` (`$HOME/chrome_agent_profile`), keeping your personal browsing cookies completely untouched.
+2. **Profile Isolation**: Uses a dedicated `--user-data-dir` (`chrome_agent_profile`), keeping your personal browsing cookies completely untouched.
 3. **Secret Protection**: `.gitignore` prevents publishing session data (`data/*.json`), environment files (`.env`), or local logs to git.
 
 ---
