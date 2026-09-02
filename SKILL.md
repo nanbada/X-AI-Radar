@@ -1,31 +1,37 @@
 ---
 name: x-ai-radar
-description: "최근 24시간 내 X(Twitter) AI/Agents 급상승 포스트(Velocity Score)와 GitHub Trending, Hacker News 핵심 이슈를 17초 만에 통합 수집·분석하여 일일 리포트를 생성합니다."
+description: "최근 24시간 내 X(Twitter) AI/Agents 급상승 포스트(Velocity Score), GitHub Trending, Hacker News 및 초·중등 교육 블로그 아이템 3종을 17초 만에 통합 수집·분석하여 일일 리포트 및 텔레그램 알림을 발송합니다."
 ---
 
-# x-ai-radar Skill (v2.1 High-Speed Engine)
+# x-ai-radar & edu-blog-radar Skills (v2.2)
 
-Antigravity의 `Browser Subagent`와 **Gemini 3.7 Flash**를 결합하여 X(Twitter) 정밀 검색 쿼리 + 홈 타임라인 + GitHub Trending AI 오픈소스 + Hacker News 인기 토론을 17초 내 초고속 병렬 수집하고, 상태 메모리(`data/history.json`) 기반의 **Velocity Score(급상승 속도)**를 산출하는 종합 인텔리전스 스킬입니다.
+Antigravity의 `Browser Subagent`와 **Gemini 3.7 Flash**를 결합하여 다중 도메인 인텔리전스를 초고속 수집하고, 텔레그램(`@Radar4All_bot`)으로 실시간 한국어 브리핑을 제공하는 통합 스킬입니다.
 
 ## 🎯 트리거 (Triggers)
+
+### 1. AI & Tech Radar
 - 슬래시 커맨드: `/x-ai-radar`
 - 자연어 명령:
   - `"X AI 핫랭킹 돌려줘"`
   - `"최근 24시간 AI Agents 및 GitHub 인기 레포 분석해줘"`
   - `"오늘자 AI & Agents 종합 인텔리전스 리포트 생성해줘"`
 
+### 2. Edu-Blog Radar
+- 슬래시 커맨드: `/edu-blog-radar`
+- 자연어 명령:
+  - `"초등 중등 블로그 아이템 추천해줘"`
+  - `"오늘자 교육 및 학부모 블로그 아이템 3가지 뽑아줘"`
+  - `"시즌별 공부법 및 학부모 꿀팁 기획서 생성해줘"`
+
 ---
 
-## 🛠️ v2.1 고속 최적화 메커니즘
+## 🛠️ v2.2 듀얼 엔진 아키텍처
 
-1. **CDP 미디어 리소스 블로킹**:
-   - `Network.setBlockedURLs`를 통해 비디오 스트림(`*.mp4`), 고해상도 이미지(`*.jpg`, `*.webp`), 광고 트래커를 브라우저 단에서 100% 차단하여 로딩 속도 60% 단축.
-2. **동기화된 CDP RPC 파이프라인 (`cdp_send_sync`)**:
-   - `Page.navigate`와 `Runtime.evaluate` 간의 패킷 꼬임 없이 100% 무결성 데이터 추출.
-3. **병렬 어댑터 풀 (`ThreadPoolExecutor`)**:
-   - X 타임라인 탐색과 동시에 **GitHub Trending AI** 및 **Hacker News API**를 백그라운드 스레드에서 병렬 호출하여 직렬 대기 시간 0초화.
-4. **상태 메모리 & Velocity Score 산출**:
-   - `data/history.json`과 대조하여 시간당 조회수/북마크 증가율($\Delta / \Delta h$) 기반 급상승 포스트(`[RISING]`, `[HOT]`) 랭킹.
-5. **3단 통합 리포트 & 웹훅 배포**:
-   - `/Users/nanbada/projects/X-AI-Radar/reports/x-ai-radar-YYYY-MM-DD.md` 자동 저장
-   - Slack / Discord / Telegram 웹훅 자동 푸시 (설정 시)
+1. **X-AI-Radar Engine (`scripts/collector.py`)**:
+   - CDP 미디어 리소스 블로킹(`*.mp4`, `*.jpg` 차단)으로 17초 내 쾌속 수집.
+   - 상태 메모리(`data/history.json`) 기반의 **Velocity Score** 산출.
+   - 해외 기술 트윗을 한국어로 즉시 번역하여 텔레그램 발송.
+2. **Edu-Blog Radar Engine (`scripts/edu_collector.py`)**:
+   - 네이버 VIEW / 학부모 검색 트렌드 분석.
+   - **초등 재미있는 공부법 / 중등 내신 플래너 / 시즌별 학습 아이템 3종** 자동 기획.
+   - 제목 3세트 + 3단 본문 구성 + SEO 해시태그 리포트 생성 및 텔레그램 발송.

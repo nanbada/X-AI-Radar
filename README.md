@@ -1,48 +1,53 @@
-# 📡 X-AI-Radar (v2.1)
+# 📡 X-AI-Radar & Edu-Blog Radar (v2.2)
 
 <p align="center">
-  <b>Multi-Source Autonomous AI & Agents Intelligence Radar</b><br>
+  <b>Multi-Domain Autonomous Intelligence & Blog Ideation Radar</b><br>
   Powered by <b>Antigravity Browser Subagent (<code>/browser</code>)</b> and <b>Gemini 3.7 Flash</b>.<br>
-  <i>⚡ High-Speed Engine: Ingests X, GitHub Trending, and Hacker News in ~17 seconds.</i><br>
-  <i>💻 100% Cross-Platform: macOS, Windows, and Linux Supported.</i>
+  <i>⚡ Dual Engine: AI & Agents Tech Radar (~17s) + Elementary & Middle School Edu-Blog Radar (3 Daily Items)</i><br>
+  <i>💻 100% Cross-Platform: macOS, Windows (Batch / PowerShell), and Linux Supported.</i>
 </p>
 
 <p align="center">
+  <a href="#-dual-intelligence-engines">Dual Engines</a> •
   <a href="#-key-features">Key Features</a> •
-  <a href="#-benchmark--performance">Benchmark</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-quick-start">Quick Start (macOS / Windows / Linux)</a> •
-  <a href="#-how-to-customize-search-topics--issues">Customizing Topics</a> •
-  <a href="#-configuration">Configuration</a> •
-  <a href="#-security--safety">Security</a> •
-  <a href="./README_KO.md">한국어 문서 (Korean)</a>
+  <a href="#-quick-start">Quick Start (macOS / Windows)</a> •
+  <a href="#-customizing-topics">Customizing Topics</a> •
+  <a href="#-project-structure">Project Structure</a> •
+  <a href="./README_KO.md">한국어 설명서 (Korean)</a>
 </p>
+
+---
+
+## 🚀 Dual Intelligence Engines
+
+X-AI-Radar features two specialized, turnkey intelligence engines that deliver automated briefings to your **Telegram (`@Radar4All_bot`)**, Slack, Discord, and Markdown reports:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. 🤖 X-AI-Radar (Tech Engine)                                              │
+│    • Target: Global AI, Autonomous Agents, LLM, MCP, and GitHub Trending    │
+│    • Latency: ~17 seconds via Chrome CDP Media Resource Blocker             │
+│    • Runner: python scripts/collector.py (or scripts/run_radar.bat)        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. 🎓 Edu-Blog Radar (Education & Parent Blog Engine)                       │
+│    • Target: Elementary/Middle School Fun Study Tips, Seasonal Study Items  │
+│    • Output: Top 3 Actionable Blog Topic Outlines & SEO Hashtags            │
+│    • Runner: python scripts/edu_collector.py (or scripts/run_edu_radar.bat)│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 🌟 Key Features
 
-- **⚡ Blazing Fast (~17s Full Run)**: Utilizes Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver complete reports in under 18 seconds.
-- **💻 Cross-Platform (macOS / Windows / Linux)**: Dedicated one-click launchers for macOS/Linux (`.sh`), Windows Batch (`.bat`), and PowerShell (`.ps1`).
-- **Zero-Cost & Ban-Free Ingestion**: Reuses your local Chrome session (Port 9223). No expensive API tiers ($100–$5,000/mo) or fragile scraping tokens.
-- **Precision Target Search**: Ingests high-signal AI posts via search operators (`min_faves:50`, `lang:en`) to completely filter out general algorithmic timeline noise.
-- **State Memory & Velocity-based Heat Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics over stale multi-day trends.
-- **Thread & External Link Inspection**: Automatically identifies `1/n` technical threads and extracts embedded GitHub repositories and ArXiv research papers.
-- **Multi-Platform Intelligence Adapters**: Aggregates **GitHub Trending AI Repositories** and **Hacker News AI Discussions** into a unified 3-part daily executive brief.
-- **Multi-Channel Webhook & Telegram Bot**: Automatically translates foreign posts into Korean and pushes summaries to Telegram (`@Radar4All_bot`), Slack, and Discord.
-- **Strictly Read-Only (100% Safe)**: Enforces zero-mutation policy (no likes, retweets, replies, or follows).
-
----
-
-## ⏱️ Benchmark & Performance
-
-```text
-⚡ [X-AI-Radar v2.1] Real-World Benchmark Results
-─────────────────────────────────────────────────────────────
-• Sources Queried: 2 X Precision Queries + Home Timeline + GitHub API + Hacker News API
-• Deduplicated Stream: 27 X Posts + 5 GitHub Repos + 2 HN Discussions
-• Total Execution Time: 17.16 seconds
-```
+- **⚡ Blazing Fast Ingestion**: Uses Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver full reports in under 18 seconds.
+- **💻 Turnkey Cross-Platform (macOS / Windows / Linux)**: Dedicated one-click launchers for macOS/Linux (`.sh`), Windows Command Prompt (`.bat`), and PowerShell (`.ps1`).
+- **🎯 3-Item Edu-Blog Generator**: Analyzes parent and student concerns from Naver and Google search to produce ready-to-publish blog drafts (Hook titles, 3-step outlines, and SEO hashtags).
+- **Zero-Cost & Ban-Free**: Reuses your local Chrome session (Port 9223). Zero expensive API tiers or fragile scraping tokens.
+- **State Memory & Velocity Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics.
+- **📱 Telegram Korean Translation Dispatch**: Automatically translates foreign tech posts into fluent Korean and sends alerts directly to `@Radar4All_bot`.
+- **🛡️ Strictly Read-Only (100% Safe)**: Enforces zero-mutation policy (no likes, retweets, replies, or follows).
 
 ---
 
@@ -50,36 +55,39 @@
 
 ```mermaid
 graph TD
-    subgraph S1 [1. Data Sources]
+    subgraph S1 [1. Multi-Source Ingestion]
         A1[X Precision Search Queries]
-        A2[X Framework Searches]
-        A3[GitHub Trending AI Repositories]
-        A4[Hacker News AI Discussions]
+        A2[GitHub Trending AI Repositories]
+        A3[Hacker News AI Discussions]
+        A4[Naver Education & Parent Search Trends]
     end
 
-    subgraph S2 [2. Analysis and Scoring Engine]
+    subgraph S2 [2. Analysis & Ideation Engine]
         B1[CDP Media and Resource Blocker]
         B2[State Memory History Cache]
         B3[Hourly Velocity Scoring Engine]
-        B4[Thread and Link Parser]
+        B4[Edu-Blog 3-Item Planner and Outliner]
     end
 
-    subgraph S3 [3. Intelligence Distribution]
-        C1[Daily Markdown Report]
+    subgraph S3 [3. Multi-Channel Distribution]
+        C1[Daily Markdown Reports in reports/]
         C2[Antigravity Chat Briefing]
-        C3[Webhook Alerts to Slack, Discord, Telegram]
+        C3[Telegram Bot @Radar4All_bot in Korean]
+        C4[Webhook Alerts: Slack and Discord]
     end
 
     A1 --> B1
-    A2 --> B1
+    A2 --> B3
     A3 --> B3
-    A4 --> B3
+    A4 --> B4
     B1 --> B2
     B2 --> B3
-    B3 --> B4
+    B3 --> C1
+    B3 --> C3
     B4 --> C1
-    B4 --> C2
     B4 --> C3
+    B3 --> C2
+    B3 --> C4
 ```
 
 ---
@@ -88,35 +96,41 @@ graph TD
 
 ```text
 X-AI-Radar/
-├── AGENTS.md                  # Autonomous agent operating protocol (DSA standard)
+├── AGENTS.md                  # Autonomous agent operating manual (DSA standard)
 ├── SKILL.md                   # Antigravity custom skill specification (/x-ai-radar)
 ├── config.yaml                # Unified configuration (Search queries, scoring, webhooks)
-├── README.md                  # English documentation
-├── README_KO.md               # Korean documentation (한국어 가이드)
+├── README.md                  # Global English documentation
+├── README_KO.md               # Korean user manual (한국어 가이드)
 ├── .gitignore                 # Security & secret isolation rules
 ├── .env                       # Local secrets (Telegram bot token & chat id, git-ignored)
 ├── data/
 │   ├── .gitkeep
 │   └── history.json           # Local cache for state memory & velocity tracking (ignored)
 ├── scripts/
-│   ├── collector.py           # Core v2.1 high-speed multi-source engine (~17s)
-│   ├── notifier.py            # Slack / Discord / Telegram webhook dispatcher (with Korean translation)
-│   ├── launch_chrome.sh       # Chrome launcher for macOS / Linux
-│   ├── launch_chrome.bat      # Chrome launcher for Windows (CMD)
-│   ├── launch_chrome.ps1      # Chrome launcher for Windows (PowerShell)
-│   ├── run_radar.sh           # Environment checker & runner for macOS / Linux
-│   ├── run_radar.bat          # Environment checker & runner for Windows
+│   ├── collector.py           # Core v2.1 high-speed AI & tech intelligence engine (~17s)
+│   ├── edu_collector.py       # Edu-Blog Radar: Elementary & Middle school 3-item planner
+│   ├── notifier.py            # Multi-channel webhook & Telegram Korean translator
+│   ├── setup_telegram.py      # Interactive Telegram bot link helper
+│   ├── launch_chrome.sh       # Chrome CDP launcher for macOS / Linux
+│   ├── launch_chrome.bat      # Chrome CDP launcher for Windows CMD
+│   ├── launch_chrome.ps1      # Chrome CDP launcher for Windows PowerShell
+│   ├── run_radar.sh           # AI Radar runner for macOS / Linux
+│   ├── run_radar.bat          # AI Radar runner for Windows
+│   ├── run_edu_radar.sh       # Edu-Blog Radar runner for macOS / Linux
+│   ├── run_edu_radar.bat      # Edu-Blog Radar runner for Windows
 │   └── adapters/
 │       ├── github_trending.py # GitHub Trending AI adapter
-│       └── hackernews.py      # Hacker News AI discussions adapter
+│       ├── hackernews.py      # Hacker News AI discussions adapter
+│       └── naver_edu.py       # Naver education search & trends adapter
 ├── templates/
-│   └── report_template.md     # 3-part comprehensive markdown report template
-└── reports/                   # Daily generated reports (x-ai-radar-YYYY-MM-DD.md)
+│   ├── report_template.md     # 3-part AI tech intelligence report template
+│   └── edu_report_template.md # 3-item educational blog ideation template
+└── reports/                   # Daily generated reports (*.md)
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (macOS / Windows / Linux)
 
 ### 1. Launch Chrome in Remote Debugging Mode (Port 9223)
 
@@ -136,18 +150,16 @@ X-AI-Radar/
 > [!NOTE]
 > In the opened Chrome window, perform a **one-time login to X.com**. The session is saved in an isolated directory (`chrome_agent_profile`) and will be reused automatically.
 
-### 2. Run X-AI-Radar
+### 2. Run the Intelligence Engines
 
-* **In Antigravity Chat**:
-  ```text
-  /x-ai-radar
-  ```
-* **Via Terminal / Command Prompt**:
-  ```bash
-  python scripts/collector.py
-  ```
-* **Windows One-Click Runner**:
-  Double-click `scripts\run_radar.bat`
+#### A. AI & Tech Intelligence Radar (X-AI-Radar)
+* **In Antigravity Chat**: Type `/x-ai-radar`
+* **Via Terminal**: `python scripts/collector.py`
+* **Windows One-Click**: Double-click `scripts\run_radar.bat`
+
+#### B. Educational & Parent Blog Radar (Edu-Blog Radar)
+* **Via Terminal**: `python scripts/edu_collector.py`
+* **Windows One-Click**: Double-click `scripts\run_edu_radar.bat`
 
 ### 3. Schedule Daily Autonomous Execution (08:15 KST)
 Register the recurring task with Antigravity:
@@ -160,80 +172,18 @@ IsDaemon: true
 
 ---
 
-## 🎯 How to Customize Search Topics & Issues
+## 🎯 Customizing Topics & Search Queries
 
-You can easily adapt X-AI-Radar to track any domain (e.g. **Robotics, Web3, Healthcare AI, Quant, or specific LLMs like Claude/DeepSeek**) by modifying `config.yaml`.
-
-### 1. Update Target Search Queries (`browser.search_queries`)
-X-AI-Radar supports official X/Twitter search operators (e.g. `min_faves`, `lang`, boolean `OR`/`AND`, `-filter:replies`):
+You can easily adapt X-AI-Radar to track any domain (Robotics, Web3, Healthcare AI, Specific LLMs, etc.) by modifying `config.yaml`:
 
 ```yaml
 browser:
   search_queries:
-    # Example A: Track AI Agents & Reasoning Models
+    # Example A: AI Agents & Reasoning Models
     - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20Reasoning%20OR%20MCP)%20min_faves%3A50&f=live"
     
-    # Example B: Track Robotics & Physical AI
+    # Example B: Robotics & Physical AI
     - "https://x.com/search?q=(Robotics%20OR%20Humanoid%20OR%20PhysicalAI)%20min_faves%3A30&f=live"
-    
-    # Example C: Track Korean Tech / AI Discussions
-    - "https://x.com/search?q=(인공지능%20OR%20LLM%20OR%20에이전트)%20min_faves%3A10&f=live"
-```
-
-### 2. Customize Boost Keywords (+150 Score Bonus)
-Posts containing these keywords will receive an automatic **+150.0 point score bonus** and high-priority badge tags:
-
-```yaml
-topics:
-  primary:
-    - "Robotics"
-    - "Autonomous Agents"
-  boost_keywords:
-    - "Humanoid"
-    - "Physical AI"
-    - "ROS"
-    - "LangGraph"
-    - "MCP"
-```
-
-### 3. Configure Noise & Negative Keywords
-Prevent spam, unrelated sports, or coin shills from appearing in your reports:
-
-```yaml
-topics:
-  exclude_keywords:
-    - "airdrop"
-    - "giveaway"
-    - "memecoin"
-    - "football"
-    - "transfer"
-```
-
----
-
-## ⚙️ Configuration Reference (`config.yaml`)
-
-```yaml
-# Time Window & Top Count
-filter:
-  window_hours: 24             # Lookback window (last 24 hours)
-  top_select_count: 10         # Number of top posts to include
-
-# State Memory & Velocity Weights
-memory:
-  enabled: true
-  history_file: "data/history.json"
-  velocity_weight_views: 0.2
-  velocity_weight_bookmarks: 5.0
-
-# Multi-Channel Webhook Notifications (.env or config.yaml)
-notifications:
-  enabled: true
-  webhooks:
-    slack: ""
-    discord: ""
-    telegram_bot_token: ""     # Automatically loaded from .env
-    telegram_chat_id: ""       # Automatically loaded from .env
 ```
 
 ---
