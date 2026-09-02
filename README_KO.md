@@ -11,6 +11,7 @@
   <a href="#-핵심-특징">핵심 특징</a> •
   <a href="#-운영체제별-릴리즈-패키지--간편-설치">릴리즈 & 설치</a> •
   <a href="#-빠른-시작-가이드-통합-cli">빠른 시작</a> •
+  <a href="#-커스터마이징-및-알림-채널-관리">설정 & 알림 관리</a> •
   <a href="#-프로젝트-구조">프로젝트 구조</a> •
   <a href="./README.md">English Version</a>
 </p>
@@ -151,6 +152,18 @@ CronExpression: "15 8 * * *"
 Prompt: "/x-ai-radar"
 IsDaemon: true
 ```
+
+---
+
+## ⚙️ 커스터마이징 및 알림 채널 관리
+
+대화형 CLI 마법사를 통해 검색 쿼리, 주제, 가산점 키워드 및 텔레그램/슬랙/디스코드 채널을 손쉽게 변경할 수 있습니다:
+
+```bash
+python radar.py --config
+```
+
+도메인별(로보틱스, 퀀트 금융, 한국어 테크 등) 복사해 쓰는 프리셋과 상세 가이드는 **[상세 커스터마이징 가이드 문서(docs/CUSTOMIZATION_GUIDE_KO.md)](docs/CUSTOMIZATION_GUIDE_KO.md)**를 참고하세요.
 
 ---
 

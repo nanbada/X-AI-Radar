@@ -12,6 +12,7 @@
   <a href="#-key-features">Key Features</a> •
   <a href="#-multi-os-release--installation">Release & Install</a> •
   <a href="#-quick-start">Quick Start</a> •
+  <a href="#-customization--channel-management">Customization & Channels</a> •
   <a href="#-project-structure">Project Structure</a> •
   <a href="./README_KO.md">한국어 설명서 (Korean)</a>
 </p>
@@ -152,6 +153,18 @@ CronExpression: "15 8 * * *"
 Prompt: "/x-ai-radar"
 IsDaemon: true
 ```
+
+---
+
+## ⚙️ Customization & Channel Management
+
+You can easily manage search queries, topic keywords, and notification webhooks via the interactive CLI wizard:
+
+```bash
+python radar.py --config
+```
+
+For domain presets (Robotics, Quant, Korean Startups) and manual configuration examples, see our **[Complete Customization Guide](docs/CUSTOMIZATION_GUIDE.md)**.
 
 ---
 
