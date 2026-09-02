@@ -2,16 +2,20 @@
 """
 Multi-Channel Webhook Notifier for X-AI-Radar
 Dispatches Top 3 Daily Highlights to Slack, Discord, and Telegram endpoints.
-Translates foreign language posts into natural Korean for the user.
+Supports sending direct GitHub web links and attaching the actual .md report document.
 """
 
 import html
 import json
 import os
+import subprocess
 import sys
 import urllib.parse
 import urllib.request
+import uuid
 import yaml
+
+GITHUB_REPO_URL = "https://github.com/nanbada/X-AI-Radar"
 
 def load_env_file():
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -25,25 +29,68 @@ def load_env_file():
                     env_vars[k.strip()] = v.strip().strip('"').strip("'")
     return env_vars
 
+def sync_report_to_github(report_file):
+    """
+    Safely commits and pushes the generated daily report to GitHub so the web link is immediately live.
+    """
+    if not os.path.exists(report_file):
+        return
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        rel_report = os.path.relpath(report_file, base_dir)
+        subprocess.run(["git", "-C", base_dir, "add", rel_report], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "-C", base_dir, "commit", "-m", f"docs(report): auto-publish {os.path.basename(report_file)}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "-C", base_dir, "push", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        print(f"🌐 Pushed {os.path.basename(report_file)} to GitHub for live web viewing.")
+    except Exception as e:
+        print(f"⚠️ Git auto-push skipped: {e}", file=sys.stderr)
+
+def send_telegram_document(token, chat_id, file_path, caption=""):
+    """
+    Attaches the physical markdown (.md) report file directly into the Telegram chat room.
+    """
+    if not os.path.exists(file_path):
+        return
+        
+    filename = os.path.basename(file_path)
+    boundary = "----WebKitFormBoundary" + uuid.uuid4().hex
+    
+    with open(file_path, "rb") as f:
+        file_content = f.read()
+        
+    body = []
+    body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n{chat_id}\r\n'.encode('utf-8'))
+    if caption:
+        body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n{caption}\r\n'.encode('utf-8'))
+    body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="{filename}"\r\nContent-Type: text/markdown; charset=utf-8\r\n\r\n'.encode('utf-8'))
+    body.append(file_content)
+    body.append(f'\r\n--{boundary}--\r\n'.encode('utf-8'))
+    
+    payload = b''.join(body)
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as res:
+            print(f"📎 Attached {filename} document directly into Telegram chat!")
+    except Exception as e:
+        print(f"⚠️ Telegram document attach error: {e}", file=sys.stderr)
+
 def translate_to_korean(text):
-    """
-    Translates English / foreign text into Korean using fast, zero-dependency translation.
-    """
     if not text:
         return ""
     try:
         url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ko&dt=t&q=" + urllib.parse.quote(text[:300])
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=4) as res:
             data = json.loads(res.read().decode("utf-8"))
             return "".join([part[0] for part in data[0] if part[0]])
-    except Exception as e:
-        print(f"⚠️ Translation fallback ({e})", file=sys.stderr)
+    except Exception:
         return text
 
 def send_notifications(summary_data):
     """
-    Reads webhook configurations and sends formatted alerts with Korean translation.
+    Reads webhook configurations and sends formatted alerts with clickable GitHub web links and file attachments.
     """
     config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
     if not os.path.exists(config_path):
@@ -67,10 +114,14 @@ def send_notifications(summary_data):
     today_str = summary_data.get("date", "Today")
     report_file = summary_data.get("report_file", "")
     
-    # 1. Slack / Discord Markdown Text (with Korean Translation)
+    # 1. Sync Report to GitHub for live web viewing
+    sync_report_to_github(report_file)
+    github_report_url = f"{GITHUB_REPO_URL}/blob/main/reports/{os.path.basename(report_file)}"
+    
+    # 2. Slack / Discord Markdown Text
     lines = [
         f"📡 *[X-AI-Radar] AI & Agents 데일리 핫이슈 ({today_str})*",
-        f"📁 전체 리포트: `{os.path.basename(report_file)}`",
+        f"🌐 *웹에서 전체보기*: <{github_report_url}|GitHub에서 리포트 열기>",
         "───────────────────────────────"
     ]
     for i, p in enumerate(top_posts, 1):
@@ -104,12 +155,12 @@ def send_notifications(summary_data):
         except Exception as e:
             print(f"⚠️ Discord notification error: {e}", file=sys.stderr)
             
-    # 2. Telegram Bot Dispatch (HTML Mode with Korean Translation)
+    # 3. Telegram Bot Dispatch (HTML Message + File Attachment)
     if tg_token and tg_chat_id:
         try:
             tg_lines = [
                 f"📡 <b>[X-AI-Radar] 오늘의 AI &amp; Agents 핫이슈 요약 ({html.escape(today_str)})</b>",
-                f"📁 <i>전체 리포트: {html.escape(os.path.basename(report_file))}</i>",
+                f"🌐 <b><a href=\"{github_report_url}\">👉 웹에서 리포트 전체보기 (GitHub)</a></b>",
                 "───────────────────────────────"
             ]
             for i, p in enumerate(top_posts, 1):
@@ -127,42 +178,20 @@ def send_notifications(summary_data):
                 
             tg_html = "\n".join(tg_lines)
             
+            # Step A: Send message with clickable web link
             tg_url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
             payload = json.dumps({
                 "chat_id": tg_chat_id,
                 "text": tg_html,
                 "parse_mode": "HTML",
-                "disable_web_page_preview": True
+                "disable_web_page_preview": False
             }).encode("utf-8")
             req = urllib.request.Request(tg_url, data=payload, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=8) as res:
-                print("✅ Live Korean-translated Report dispatched to Telegram!")
+            with urllib.request.urlopen(req, timeout=8):
+                print("✅ Live Report text dispatched to Telegram!")
+                
+            # Step B: Attach the physical .md report file directly in chat
+            send_telegram_document(tg_token, tg_chat_id, report_file, caption=f"📄 [X-AI-Radar] {today_str} 일일 전체 리포트 마크다운 파일")
+            
         except Exception as e:
             print(f"⚠️ Telegram notification error: {e}", file=sys.stderr)
-
-if __name__ == "__main__":
-    from datetime import datetime
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    sample_report = {
-        "date": today_str,
-        "report_file": f"reports/x-ai-radar-{today_str}.md",
-        "top_posts": [
-            {
-                "handle": "@farzyness",
-                "heatScore": 6466.0,
-                "badge": "🚀 RISING",
-                "text": "The ultimate Grok @bot set up for me is to filter EVERYTHING through one agent and hide everything else. That master agent coordinates specialized sub-agents for your process and life.",
-                "tweetUrl": "https://x.com/farzyness/status/2094810782697398294",
-                "parsedMetrics": {"views": 69000, "likes": 332, "bookmarks": 42}
-            },
-            {
-                "handle": "@binance",
-                "heatScore": 1353.0,
-                "badge": "🚀 RISING",
-                "text": "Introducing the Binance Agent OS Mini Hackathon. $60,000 USDC Prize Pool: Build an AI agent with Agent OS & connect your MCPs to trade automatically.",
-                "tweetUrl": "https://x.com/binance/status/2094810011557838988",
-                "parsedMetrics": {"views": 78000, "likes": 106, "bookmarks": 85}
-            }
-        ]
-    }
-    send_notifications(sample_report)

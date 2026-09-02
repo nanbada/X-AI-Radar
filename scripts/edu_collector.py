@@ -2,17 +2,19 @@
 """
 Edu-Blog Radar Intelligence Engine (v1.0)
 Scouts educational trends across Elementary, Middle school, and Seasonal domains.
-Generates 3 actionable blog topic plans and dispatches them to Telegram.
+Generates 3 actionable blog topic plans, pushes report to GitHub, and dispatches to Telegram.
 """
 
 import html
 from datetime import datetime
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.parse
 import urllib.request
+import uuid
 import yaml
 
 # Import local modules
@@ -21,6 +23,7 @@ from adapters.naver_edu import get_all_edu_trends
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", ".env")
+GITHUB_REPO_URL = "https://github.com/nanbada/X-AI-Radar"
 
 def load_env_vars():
     env_vars = {}
@@ -33,6 +36,53 @@ def load_env_vars():
                     env_vars[k.strip()] = v.strip().strip('"').strip("'")
     return env_vars
 
+def sync_report_to_github(report_file):
+    """
+    Safely commits and pushes the generated daily report to GitHub so the web link is immediately live.
+    """
+    if not os.path.exists(report_file):
+        return
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        rel_report = os.path.relpath(report_file, base_dir)
+        subprocess.run(["git", "-C", base_dir, "add", rel_report], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "-C", base_dir, "commit", "-m", f"docs(report): auto-publish {os.path.basename(report_file)}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["git", "-C", base_dir, "push", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        print(f"🌐 Pushed {os.path.basename(report_file)} to GitHub for live web viewing.")
+    except Exception as e:
+        print(f"⚠️ Git auto-push skipped: {e}", file=sys.stderr)
+
+def send_telegram_document(token, chat_id, file_path, caption=""):
+    """
+    Attaches the physical markdown (.md) report file directly into the Telegram chat room.
+    """
+    if not os.path.exists(file_path):
+        return
+        
+    filename = os.path.basename(file_path)
+    boundary = "----WebKitFormBoundary" + uuid.uuid4().hex
+    
+    with open(file_path, "rb") as f:
+        file_content = f.read()
+        
+    body = []
+    body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="chat_id"\r\n\r\n{chat_id}\r\n'.encode('utf-8'))
+    if caption:
+        body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="caption"\r\n\r\n{caption}\r\n'.encode('utf-8'))
+    body.append(f'--{boundary}\r\nContent-Disposition: form-data; name="document"; filename="{filename}"\r\nContent-Type: text/markdown; charset=utf-8\r\n\r\n'.encode('utf-8'))
+    body.append(file_content)
+    body.append(f'\r\n--{boundary}--\r\n'.encode('utf-8'))
+    
+    payload = b''.join(body)
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as res:
+            print(f"📎 Attached {filename} document directly into Telegram chat!")
+    except Exception as e:
+        print(f"⚠️ Telegram document attach error: {e}", file=sys.stderr)
+
 def send_edu_telegram_notification(today_str, report_file, items):
     env_vars = load_env_vars()
     tg_token = env_vars.get("EDU_TELEGRAM_BOT_TOKEN") or env_vars.get("TELEGRAM_BOT_TOKEN")
@@ -42,9 +92,14 @@ def send_edu_telegram_notification(today_str, report_file, items):
         print("⚠️ No Telegram credentials found.", file=sys.stderr)
         return
 
+    # 1. Sync Report to GitHub for live web viewing
+    sync_report_to_github(report_file)
+    github_report_url = f"{GITHUB_REPO_URL}/blob/main/reports/{os.path.basename(report_file)}"
+
+    # 2. Compose summary HTML
     tg_lines = [
         f"🎓 <b>[Edu-Blog Radar] 오늘의 초·중등 블로그 아이템 TOP 3 ({html.escape(today_str)})</b>",
-        f"📁 <i>기획서: {html.escape(os.path.basename(report_file))}</i>",
+        f"🌐 <b><a href=\"{github_report_url}\">👉 웹에서 기획서 전체보기 (GitHub)</a></b>",
         "───────────────────────────────"
     ]
     
@@ -60,22 +115,26 @@ def send_edu_telegram_notification(today_str, report_file, items):
         tg_lines.append(f"📝 <b>핵심 구성</b>:\n{core}\n")
         
     tg_lines.append("───────────────────────────────")
-    tg_lines.append("💡 <i>본문 작성용 풀버전 목차와 해시태그는 리포트 파일에 저장되었습니다.</i>")
+    tg_lines.append(f"💡 <i>아래 첨부된 {html.escape(os.path.basename(report_file))} 파일을 열거나 위 링크를 누르면 전체 본문 초안을 보실 수 있습니다.</i>")
     
     tg_html = "\n".join(tg_lines)
     
+    # Step A: Send text with clickable GitHub link
     send_url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
     payload = json.dumps({
         "chat_id": tg_chat_id,
         "text": tg_html,
         "parse_mode": "HTML",
-        "disable_web_page_preview": True
+        "disable_web_page_preview": False
     }).encode("utf-8")
     
     try:
         req = urllib.request.Request(send_url, data=payload, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=8) as res:
-            print("✅ Edu-Blog 3-Item Radar successfully sent to Telegram!")
+        with urllib.request.urlopen(req, timeout=8):
+            print("✅ Edu-Blog 3-Item text summary successfully sent to Telegram!")
+            
+        # Step B: Attach actual physical .md file
+        send_telegram_document(tg_token, tg_chat_id, report_file, caption=f"📄 [Edu-Blog Radar] {today_str} 추천 아이템 3종 전체 기획서 파일")
     except Exception as e:
         print(f"⚠️ Telegram sending error: {e}", file=sys.stderr)
 
@@ -89,8 +148,7 @@ def main():
     # 1. Fetch live search items
     trends = get_all_edu_trends()
     
-    # 2. Curate 3 High-Impact Blog Items (Elementary, Middle, Seasonal)
-    # Item 1: Elementary Fun Study
+    # 2. Curate 3 High-Impact Blog Items
     item1 = {
         "category": "초등 저학년/고학년",
         "subtitle": "놀이형 자기주도 학습 습관과 루틴 형성",
@@ -109,7 +167,6 @@ def main():
         "tags": "#초등공부법 #초등자기주도학습 #초등학부모 #초등습관 #초등맘소통 #2학기학습법"
     }
     
-    # Item 2: Middle School Exam Strategy
     item2 = {
         "category": "중등 1~3학년",
         "subtitle": "2학기 1차 지필평가(중간고사) 4주 완성 플래너 전략",
@@ -128,7 +185,6 @@ def main():
         "tags": "#중등공부법 #중학교중간고사 #중등내신 #중학교시험대비 #중등플래너 #중등맘"
     }
     
-    # Item 3: Seasonal Must-Have Study Item & Mental Care
     item3 = {
         "category": "시즌별 핫아이템 & 학부모 멘탈케어",
         "subtitle": "2학기 집중력 2배 높이는 책상 정리템 & 학부모 코칭 팁",
@@ -209,22 +265,8 @@ def main():
     elapsed = time.time() - start_time
     print(f"🎉 [Edu-Blog Radar] Report generated in {elapsed:.2f}s! ({report_file})")
     
-    # 4. Dispatch live alert to Telegram
+    # 4. Dispatch live alert + file attachment to Telegram
     send_edu_telegram_notification(today_str, report_file, items)
-    
-    print("---EDU_SUMMARY_START---")
-    print(json.dumps({
-        "status": "success",
-        "date": today_str,
-        "report_file": report_file,
-        "items_count": len(items),
-        "items": [
-            {"category": item1["category"], "title": item1["recommended_title"]},
-            {"category": item2["category"], "title": item2["recommended_title"]},
-            {"category": item3["category"], "title": item3["recommended_title"]}
-        ]
-    }, ensure_ascii=False, indent=2))
-    print("---EDU_SUMMARY_END---")
 
 if __name__ == "__main__":
     main()
