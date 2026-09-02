@@ -66,9 +66,15 @@ Examples:
     parser.add_argument("--ai", "-a", action="store_true", help="Run AI & Tech Intelligence Radar")
     parser.add_argument("--edu", "-e", action="store_true", help="Run Educational Blog Radar")
     parser.add_argument("--browser", "-b", action="store_true", help="Launch Chrome Remote Debugging Mode")
+    parser.add_argument("--config", "-c", action="store_true", help="Launch Interactive Configuration Wizard (Topics & Channels)")
     
     args = parser.parse_args()
     
+    if args.config:
+        wizard_path = os.path.join(BASE_DIR, "tools", "config_wizard.py")
+        subprocess.run([sys.executable, wizard_path])
+        return
+
     if args.browser:
         launch_browser()
         return
