@@ -19,6 +19,8 @@ import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
+import platform
+import subprocess
 import yaml
 import websocket
 
@@ -135,9 +137,23 @@ def get_x_page_ws():
         url = f"http://127.0.0.1:{CDP_PORT}/json/list"
         with urllib.request.urlopen(url, timeout=5) as res:
             pages = json.loads(res.read().decode())
+            
+        # 1. Look for existing x.com page
         target = next((p for p in pages if "x.com" in p.get("url", "") and p.get("type") == "page"), None)
         if target:
             return target["webSocketDebuggerUrl"]
+            
+        # 2. Fallback to any active page
+        target = next((p for p in pages if p.get("type") == "page"), None)
+        if target:
+            return target["webSocketDebuggerUrl"]
+            
+        # 3. Create a new page tab via CDP /json/new
+        new_url = f"http://127.0.0.1:{CDP_PORT}/json/new?https://x.com/home"
+        req = urllib.request.Request(new_url, method="PUT")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            new_target = json.loads(res.read().decode())
+            return new_target.get("webSocketDebuggerUrl")
     except Exception as e:
         print(f"❌ Failed to reach Chrome CDP on port {CDP_PORT}: {e}", file=sys.stderr)
     return None
@@ -345,6 +361,20 @@ def main():
     
     # 2. Connect to active X CDP WebSocket
     ws_url = get_x_page_ws()
+    if not ws_url:
+        print(f"⚠️ Port {CDP_PORT} not responding. Attempting auto-launch of Chrome Remote Debugger...")
+        try:
+            import platform
+            current_os = platform.system().lower()
+            if "windows" in current_os:
+                subprocess.Popen(["cmd.exe", "/c", os.path.join(os.path.dirname(__file__), "launch_chrome.bat")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                subprocess.Popen(["bash", os.path.join(os.path.dirname(__file__), "launch_chrome.sh")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(3.0)
+            ws_url = get_x_page_ws()
+        except Exception as err:
+            print(f"⚠️ Auto-launch Chrome error: {err}", file=sys.stderr)
+
     if not ws_url:
         print(f"❌ Could not connect to Chrome CDP on port {CDP_PORT}.", file=sys.stderr)
         return
