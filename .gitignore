@@ -29,3 +29,5 @@ Thumbs.db
 *.log
 scratch/
 tmp/
+dist/
+release/

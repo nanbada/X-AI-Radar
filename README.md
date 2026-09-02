@@ -4,15 +4,15 @@
   <b>Multi-Domain Autonomous Intelligence & Blog Ideation Radar</b><br>
   Powered by <b>Antigravity Browser Subagent (<code>/browser</code>)</b> and <b>Gemini 3.7 Flash</b>.<br>
   <i>⚡ Dual Engine: AI & Tech Radar (~17s) + Elementary & Middle School Edu-Blog Radar (3 Daily Items)</i><br>
-  <i>💻 100% Cross-Platform: Unified CLI for macOS, Windows (Batch / PowerShell), and Linux.</i>
+  <i>📦 Turnkey Multi-OS Release Packages: macOS, Windows (x64), and Linux Supported.</i>
 </p>
 
 <p align="center">
   <a href="#-dual-intelligence-engines">Dual Engines</a> •
   <a href="#-key-features">Key Features</a> •
-  <a href="#-project-structure">Project Structure</a> •
+  <a href="#-multi-os-release--installation">Release & Install</a> •
   <a href="#-quick-start">Quick Start</a> •
-  <a href="#-customizing-topics">Customizing Topics</a> •
+  <a href="#-project-structure">Project Structure</a> •
   <a href="./README_KO.md">한국어 설명서 (Korean)</a>
 </p>
 
@@ -28,7 +28,7 @@ X-AI-Radar features two specialized, turnkey intelligence engines that deliver a
 │    • Target: Global AI, Autonomous Agents, LLM, MCP, and GitHub Trending    │
 │    • Latency: ~17 seconds via Chrome CDP Media Resource Blocker             │
 │    • Command: python radar.py --ai                                          │
-│    • Telegram: @Radar4All_bot                                               │
+│    • Telegram: @Radar4All_bot (Korean translated)                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2. 🎓 Edu-Blog Radar (Education & Parent Blog Engine)                       │
 │    • Target: Elementary/Middle School Fun Study Tips, Seasonal Study Items  │
@@ -43,22 +43,43 @@ X-AI-Radar features two specialized, turnkey intelligence engines that deliver a
 ## 🌟 Key Features
 
 - **⚡ Blazing Fast Ingestion**: Uses Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver full reports in under 18 seconds.
-- **💻 Unified CLI (`radar.py`)**: Single command execution across macOS, Windows, and Linux (`python radar.py --all`, `--ai`, `--edu`, or `--browser`).
+- **📦 Turnkey Multi-OS Packaging**: Automated release module (`tools/package_release.py`) that generates isolated standalone packages for Windows (`.zip`), macOS (`.tar.gz`), and Linux (`.tar.gz`).
+- **💻 One-Click Installers**: `install.bat` (Windows) and `install.sh` (macOS/Linux) for zero-configuration setup.
 - **🎯 3-Item Edu-Blog Generator**: Analyzes parent and student concerns from Naver and Google search to produce ready-to-publish blog drafts (Hook titles, 3-step outlines, and SEO hashtags).
 - **📱 Dual Telegram Bot Routing**: Automatically dispatches Tech summaries to `@Radar4All_bot` (Korean translated) and Educational blog ideas to `@edunewsradar_bot`.
 - **Zero-Cost & Ban-Free**: Reuses your local Chrome session (Port 9223). Zero expensive API tiers or fragile scraping tokens.
-- **State Memory & Velocity Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics.
 - **🛡️ Strictly Read-Only (100% Safe)**: Enforces zero-mutation policy (no likes, retweets, replies, or follows).
 
 ---
 
-## 📂 Optimized Project Structure
+## 📦 Multi-OS Release & Installation
+
+Download the latest release archive for your operating system from [GitHub Releases](https://github.com/nanbada/X-AI-Radar/releases):
+
+| Operating System | Package Format | One-Click Installer | Launch Script |
+| :--- | :--- | :--- | :--- |
+| **🪟 Windows (x64)** | `X-AI-Radar-v2.2.0-windows-x64.zip` | `install.bat` (Double Click) | `run.bat` (Double Click) |
+| **🍎 macOS (Apple Silicon / Intel)** | `X-AI-Radar-v2.2.0-macos-universal.tar.gz` | `./install.sh` | `./run.sh` |
+| **🐧 Linux (x64)** | `X-AI-Radar-v2.2.0-linux-x64.tar.gz` | `./install.sh` | `./run.sh` |
+
+### Building Packages Locally
+To package distribution archives on your machine:
+```bash
+python tools/package_release.py --os all
+```
+Generated packages will be stored in `dist/`.
+
+---
+
+## 📂 Project Structure
 
 ```text
 X-AI-Radar/
 ├── radar.py                   # 🌟 Unified Root CLI Orchestrator (--all, --ai, --edu, --browser)
 ├── run.bat                    # 🚀 Windows One-Click Root Launcher (Double Click)
 ├── run.sh                     # 🚀 macOS/Linux Root Runner
+├── install.bat                # 📦 Windows One-Click Environment Setup & Installer
+├── install.sh                 # 📦 macOS/Linux Environment Setup & Installer
 ├── requirements.txt           # Python project dependencies (pyyaml, websocket-client)
 ├── .env.example               # Secret credentials template
 ├── .env                       # Local private Telegram & Webhook secrets (Git Ignored)
@@ -67,6 +88,10 @@ X-AI-Radar/
 ├── SKILL.md                   # Antigravity custom skill specification (/x-ai-radar, /edu-blog-radar)
 ├── README.md                  # Global English documentation
 ├── README_KO.md               # Korean user manual (한국어 가이드)
+├── .github/workflows/
+│   └── release.yml            # 🚀 Automated Multi-OS GitHub Actions Release Pipeline
+├── tools/
+│   └── package_release.py     # 📦 Multi-OS Release Packager (Windows ZIP, macOS/Linux TAR.GZ)
 ├── data/
 │   ├── .gitkeep
 │   └── history.json           # State memory & velocity tracking cache (Git Ignored)
@@ -126,22 +151,6 @@ Register the recurring task with Antigravity:
 CronExpression: "15 8 * * *"
 Prompt: "/x-ai-radar"
 IsDaemon: true
-```
-
----
-
-## 🎯 Customizing Topics & Search Queries
-
-You can easily adapt X-AI-Radar to track any domain (Robotics, Web3, Healthcare AI, Specific LLMs, etc.) by modifying `config.yaml`:
-
-```yaml
-browser:
-  search_queries:
-    # Example A: AI Agents & Reasoning Models
-    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20Reasoning%20OR%20MCP)%20min_faves%3A50&f=live"
-    
-    # Example B: Robotics & Physical AI
-    - "https://x.com/search?q=(Robotics%20OR%20Humanoid%20OR%20PhysicalAI)%20min_faves%3A30&f=live"
 ```
 
 ---

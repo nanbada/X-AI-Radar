@@ -1,0 +1,49 @@
+name: 🚀 Build & Publish Multi-OS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install Packaging Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: 🛠️ Build Multi-OS Distribution Packages
+        run: |
+          python tools/package_release.py --os all
+
+      - name: 📋 Display Generated Artifacts
+        run: |
+          ls -la dist/
+          cat dist/RELEASE_MANIFEST.json
+
+      - name: 🚀 Create GitHub Release & Upload Binaries
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: "X-AI-Radar & Edu-Blog Radar ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
+            dist/RELEASE_MANIFEST.json

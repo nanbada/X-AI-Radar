@@ -3,15 +3,15 @@
 <p align="center">
   <b>Antigravity Browser Subagent(<code>/browser</code>) 및 Gemini 3.7 Flash 기반의 다중 도메인 자율 인텔리전스 & 블로그 기획 레이더</b><br>
   <i>⚡ 듀얼 엔진: 글로벌 AI/Agents 기술 레이더 (~17초) + 초·중등 학부모 블로그 아이템 3종 기획 레이더</i><br>
-  <i>💻 통합 CLI: macOS, Windows (배치/PowerShell), Linux 단일 명령 완벽 지원</i>
+  <i>📦 OS별 독립 릴리즈 배포 패키지: Windows(x64), macOS(Universal), Linux 완벽 지원</i>
 </p>
 
 <p align="center">
   <a href="#-듀얼-인텔리전스-엔진">듀얼 엔진</a> •
   <a href="#-핵심-특징">핵심 특징</a> •
-  <a href="#-최적화된-프로젝트-구조">프로젝트 구조</a> •
-  <a href="#-빠른-시작-가이드-통합-cli">빠른 시작 (통합 CLI)</a> •
-  <a href="#-검색-이슈-및-주제-변경-방법">주제 변경 방법</a> •
+  <a href="#-운영체제별-릴리즈-패키지--간편-설치">릴리즈 & 설치</a> •
+  <a href="#-빠른-시작-가이드-통합-cli">빠른 시작</a> •
+  <a href="#-프로젝트-구조">프로젝트 구조</a> •
   <a href="./README.md">English Version</a>
 </p>
 
@@ -42,22 +42,42 @@ X-AI-Radar는 사용자의 목적에 따라 2가지 독립된 고성능 인텔�
 ## 🌟 핵심 특징
 
 - **⚡ 17초 초고속 파이프라인**: 브라우저 미디어 리소스 블로킹(`*.mp4`, `*.jpg`, 트래커 차단)과 병렬 어댑터 풀을 적용하여 전체 수집 및 분석을 18초 이내에 완료합니다.
-- **💻 통합 CLI 지원 (`radar.py`)**: 운영체제 구분 없이 `python radar.py --all`, `--ai`, `--edu`, `--browser` 명령어로 전체 기능 제어.
+- **📦 OS별 원클릭 릴리즈 패키징**: 윈도우(`zip`), 맥(`tar.gz`), 리눅스(`tar.gz`) 전용 독립 배포 아카이브 빌드 모듈(`tools/package_release.py`) 탑재.
+- **💻 원클릭 자동 설치 프로그램**: 윈도우용 `install.bat`과 맥/리눅스용 `install.sh`로 초보자도 10초 만에 환경 구축 완료.
 - **🎯 초·중등 블로그 아이템 3종 자동 기획**: 네이버 검색 및 학부모 실시간 고민을 분석하여 블로그에 바로 쓸 수 있는 완성형 초안(제목 3종, 본문 3단 목차, 해시태그)을 생성합니다.
 - **📱 듀얼 텔레그램 봇 채널 분리**: 테크 뉴스는 `@Radar4All_bot`으로, 교육 기획서는 `@edunewsradar_bot`으로 독립 분기 발송.
 - **비용 0원 & 계정 차단 제로**: 월 수백~수천 달러의 X API v2 유료 요금제 대신, 로컬 Chrome Remote Debugging(CDP, Port 9223) 세션을 활용하여 100% 안전하게 동작합니다.
-- **상태 기억(Memory) & Velocity 점수**: `data/history.json`에 과거 지표를 캐싱하여, 며칠 동안 멈춰있는 과거 인기글 대신 **"최근 몇 시간 동안 폭발적으로 증가한 포스트(`[RISING]`)"**를 우선 순위로 랭킹합니다.
 - **100% 읽기 전용 (Strictly Read-Only)**: 좋아요, 리트윗, 댓글, 팔로우 등의 쓰기 동작을 원천 차단하여 계정 안전을 보장합니다.
 
 ---
 
-## 📂 최적화된 프로젝트 구조
+## 📦 운영체제별 릴리즈 패키지 & 간편 설치
+
+[GitHub Releases](https://github.com/nanbada/X-AI-Radar/releases) 페이지에서 본인의 OS에 맞는 압축 파일을 다운로드하여 즉시 사용하실 수 있습니다:
+
+| 운영체제 (OS) | 배포 아카이브 파일 | 원클릭 설치기 | 실행 파일 |
+| :--- | :--- | :--- | :--- |
+| **🪟 Windows (x64)** | `X-AI-Radar-v2.2.0-windows-x64.zip` | `install.bat` (더블 클릭) | `run.bat` (더블 클릭) |
+| **🍎 macOS (M1/M2/Intel)** | `X-AI-Radar-v2.2.0-macos-universal.tar.gz` | `./install.sh` | `./run.sh` |
+| **🐧 Linux (x64)** | `X-AI-Radar-v2.2.0-linux-x64.tar.gz` | `./install.sh` | `./run.sh` |
+
+### 로컬에서 릴리즈 패키지 직접 빌드하기
+```bash
+python tools/package_release.py --os all
+```
+실행 시 `dist/` 폴더에 모든 OS별 배포 압축 파일과 매니페스트(`RELEASE_MANIFEST.json`)가 생성됩니다.
+
+---
+
+## 📂 프로젝트 구조
 
 ```text
 X-AI-Radar/
 ├── radar.py                   # 🌟 통합 루트 CLI 실행기 (--all, --ai, --edu, --browser)
 ├── run.bat                    # 🚀 윈도우 원클릭 루트 실행기 (더블 클릭)
 ├── run.sh                     # 🚀 macOS / Linux 루트 실행기
+├── install.bat                # 📦 윈도우 원클릭 환경 구축 및 자동 설치기
+├── install.sh                 # 📦 macOS / Linux 환경 구축 및 자동 설치기
 ├── requirements.txt           # 파이썬 의존성 패키지 (pyyaml, websocket-client)
 ├── .env.example               # 환경 변수 시크릿 템플릿
 ├── .env                       # 텔레그램 봇 토큰 및 챗 ID (Git 제외)
@@ -66,6 +86,10 @@ X-AI-Radar/
 ├── SKILL.md                   # Antigravity 커스텀 스킬 정의서 (/x-ai-radar, /edu-blog-radar)
 ├── README.md                  # 글로벌 영문 매뉴얼
 ├── README_KO.md               # 한국어 종합 매뉴얼
+├── .github/workflows/
+│   └── release.yml            # 🚀 Multi-OS GitHub Actions 자동 릴리즈 파이프라인
+├── tools/
+│   └── package_release.py     # 📦 Multi-OS 릴리즈 패키징 모듈
 ├── data/
 │   ├── .gitkeep
 │   └── history.json           # 수집 이력 및 Velocity 계산용 상태 메모리 (Git 제외)
@@ -126,22 +150,6 @@ Antigravity에 스케줄러를 등록하면 매일 아침 정해진 시간에 �
 CronExpression: "15 8 * * *"
 Prompt: "/x-ai-radar"
 IsDaemon: true
-```
-
----
-
-## 🎯 검색 이슈 및 주제 변경 방법 (Customization)
-
-`config.yaml` 파일만 수정하면 **로보틱스(Robotics), Web3, 헬스케어 AI, 퀀트 금융, 특정 모델(Claude, DeepSeek, Grok) 등** 원하는 모든 도메인으로 레이더를 손쉽게 전환할 수 있습니다:
-
-```yaml
-browser:
-  search_queries:
-    # 예시 A: AI Agents & 추론 모델 집중 추적
-    - "https://x.com/search?q=(AI%20OR%20Agents%20OR%20Reasoning%20OR%20MCP)%20min_faves%3A50&f=live"
-    
-    # 예시 B: 로보틱스 & 피지컬 AI 도메인으로 변경
-    - "https://x.com/search?q=(Robotics%20OR%20Humanoid%20OR%20PhysicalAI)%20min_faves%3A30&f=live"
 ```
 
 ---
