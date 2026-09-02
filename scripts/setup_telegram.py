@@ -11,7 +11,7 @@ import time
 import urllib.request
 import yaml
 
-TOKEN = "8969095857:AAFK1_v2QpLFKy4yx32g6ktocd4ZQSnyszY"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN")
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
 
 def check_chat_id():

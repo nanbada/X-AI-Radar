@@ -95,12 +95,12 @@ All sensitive webhook tokens and chat IDs are securely loaded from `.env` (which
 
 ```env
 # 1. AI & Tech Radar Telegram Bot (@Radar4All_bot)
-TELEGRAM_BOT_TOKEN="8969095857:AAFK1_v2QpLFKy4yx32g6ktocd4ZQSnyszY"
-TELEGRAM_CHAT_ID="6350373048"
+TELEGRAM_BOT_TOKEN="YOUR_TECH_BOT_TOKEN"
+TELEGRAM_CHAT_ID="YOUR_CHAT_ID"
 
 # 2. Edu-Blog Radar Telegram Bot (@edunewsradar_bot / 학습블로그 아이템)
-EDU_TELEGRAM_BOT_TOKEN="8376644109:AAFRgtiM5kJ7h4Qu5Gl2B602wYIj3GhXms4"
-EDU_TELEGRAM_CHAT_ID="6350373048"
+EDU_TELEGRAM_BOT_TOKEN="YOUR_EDU_BOT_TOKEN"
+EDU_TELEGRAM_CHAT_ID="YOUR_CHAT_ID"
 
 # 3. Optional Slack & Discord Webhooks
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
