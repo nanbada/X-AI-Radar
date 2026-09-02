@@ -35,8 +35,8 @@ def load_env_vars():
 
 def send_edu_telegram_notification(today_str, report_file, items):
     env_vars = load_env_vars()
-    tg_token = env_vars.get("TELEGRAM_BOT_TOKEN")
-    tg_chat_id = env_vars.get("TELEGRAM_CHAT_ID")
+    tg_token = env_vars.get("EDU_TELEGRAM_BOT_TOKEN") or env_vars.get("TELEGRAM_BOT_TOKEN")
+    tg_chat_id = env_vars.get("EDU_TELEGRAM_CHAT_ID") or env_vars.get("TELEGRAM_CHAT_ID")
     
     if not tg_token or not tg_chat_id:
         print("⚠️ No Telegram credentials found.", file=sys.stderr)
