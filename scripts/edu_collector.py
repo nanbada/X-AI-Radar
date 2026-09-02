@@ -2,14 +2,13 @@
 """
 Edu-Blog Radar Intelligence Engine (v1.0)
 Scouts educational trends across Elementary, Middle school, and Seasonal domains.
-Generates 3 actionable blog topic plans, pushes report to GitHub, and dispatches to Telegram.
+Generates 3 actionable blog topic plans and dispatches them with direct .md attachments to Telegram.
 """
 
 import html
 from datetime import datetime
 import json
 import os
-import subprocess
 import sys
 import time
 import urllib.parse
@@ -23,7 +22,6 @@ from adapters.naver_edu import get_all_edu_trends
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
 ENV_PATH = os.path.join(os.path.dirname(__file__), "..", ".env")
-GITHUB_REPO_URL = "https://github.com/nanbada/X-AI-Radar"
 
 def load_env_vars():
     env_vars = {}
@@ -35,22 +33,6 @@ def load_env_vars():
                     k, v = line.split("=", 1)
                     env_vars[k.strip()] = v.strip().strip('"').strip("'")
     return env_vars
-
-def sync_report_to_github(report_file):
-    """
-    Safely commits and pushes the generated daily report to GitHub so the web link is immediately live.
-    """
-    if not os.path.exists(report_file):
-        return
-    try:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        rel_report = os.path.relpath(report_file, base_dir)
-        subprocess.run(["git", "-C", base_dir, "add", rel_report], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "-C", base_dir, "commit", "-m", f"docs(report): auto-publish {os.path.basename(report_file)}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "-C", base_dir, "push", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
-        print(f"🌐 Pushed {os.path.basename(report_file)} to GitHub for live web viewing.")
-    except Exception as e:
-        print(f"⚠️ Git auto-push skipped: {e}", file=sys.stderr)
 
 def send_telegram_document(token, chat_id, file_path, caption=""):
     """
@@ -92,14 +74,9 @@ def send_edu_telegram_notification(today_str, report_file, items):
         print("⚠️ No Telegram credentials found.", file=sys.stderr)
         return
 
-    # 1. Sync Report to GitHub for live web viewing
-    sync_report_to_github(report_file)
-    github_report_url = f"{GITHUB_REPO_URL}/blob/main/reports/{os.path.basename(report_file)}"
-
-    # 2. Compose summary HTML
+    # 1. Compose summary HTML
     tg_lines = [
         f"🎓 <b>[Edu-Blog Radar] 오늘의 초·중등 블로그 아이템 TOP 3 ({html.escape(today_str)})</b>",
-        f"🌐 <b><a href=\"{github_report_url}\">👉 웹에서 기획서 전체보기 (GitHub)</a></b>",
         "───────────────────────────────"
     ]
     
@@ -115,17 +92,17 @@ def send_edu_telegram_notification(today_str, report_file, items):
         tg_lines.append(f"📝 <b>핵심 구성</b>:\n{core}\n")
         
     tg_lines.append("───────────────────────────────")
-    tg_lines.append(f"💡 <i>아래 첨부된 {html.escape(os.path.basename(report_file))} 파일을 열거나 위 링크를 누르면 전체 본문 초안을 보실 수 있습니다.</i>")
+    tg_lines.append(f"📎 <i>본문 작성용 풀버전 목차와 해시태그는 아래 첨부된 {html.escape(os.path.basename(report_file))} 파일을 확인하세요.</i>")
     
     tg_html = "\n".join(tg_lines)
     
-    # Step A: Send text with clickable GitHub link
+    # Step A: Send text summary
     send_url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
     payload = json.dumps({
         "chat_id": tg_chat_id,
         "text": tg_html,
         "parse_mode": "HTML",
-        "disable_web_page_preview": False
+        "disable_web_page_preview": True
     }).encode("utf-8")
     
     try:
@@ -265,7 +242,7 @@ def main():
     elapsed = time.time() - start_time
     print(f"🎉 [Edu-Blog Radar] Report generated in {elapsed:.2f}s! ({report_file})")
     
-    # 4. Dispatch live alert + file attachment to Telegram
+    # 4. Dispatch live alert + direct file attachment to Telegram
     send_edu_telegram_notification(today_str, report_file, items)
 
 if __name__ == "__main__":

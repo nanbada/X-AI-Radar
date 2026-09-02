@@ -2,20 +2,17 @@
 """
 Multi-Channel Webhook Notifier for X-AI-Radar
 Dispatches Top 3 Daily Highlights to Slack, Discord, and Telegram endpoints.
-Supports sending direct GitHub web links and attaching the actual .md report document.
+Attaches the actual .md report document directly into the Telegram chat room.
 """
 
 import html
 import json
 import os
-import subprocess
 import sys
 import urllib.parse
 import urllib.request
 import uuid
 import yaml
-
-GITHUB_REPO_URL = "https://github.com/nanbada/X-AI-Radar"
 
 def load_env_file():
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -28,22 +25,6 @@ def load_env_file():
                     k, v = line.split("=", 1)
                     env_vars[k.strip()] = v.strip().strip('"').strip("'")
     return env_vars
-
-def sync_report_to_github(report_file):
-    """
-    Safely commits and pushes the generated daily report to GitHub so the web link is immediately live.
-    """
-    if not os.path.exists(report_file):
-        return
-    try:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        rel_report = os.path.relpath(report_file, base_dir)
-        subprocess.run(["git", "-C", base_dir, "add", rel_report], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "-C", base_dir, "commit", "-m", f"docs(report): auto-publish {os.path.basename(report_file)}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "-C", base_dir, "push", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
-        print(f"🌐 Pushed {os.path.basename(report_file)} to GitHub for live web viewing.")
-    except Exception as e:
-        print(f"⚠️ Git auto-push skipped: {e}", file=sys.stderr)
 
 def send_telegram_document(token, chat_id, file_path, caption=""):
     """
@@ -90,7 +71,7 @@ def translate_to_korean(text):
 
 def send_notifications(summary_data):
     """
-    Reads webhook configurations and sends formatted alerts with clickable GitHub web links and file attachments.
+    Reads webhook configurations and sends formatted alerts with direct Telegram file attachments.
     """
     config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
     if not os.path.exists(config_path):
@@ -114,14 +95,10 @@ def send_notifications(summary_data):
     today_str = summary_data.get("date", "Today")
     report_file = summary_data.get("report_file", "")
     
-    # 1. Sync Report to GitHub for live web viewing
-    sync_report_to_github(report_file)
-    github_report_url = f"{GITHUB_REPO_URL}/blob/main/reports/{os.path.basename(report_file)}"
-    
-    # 2. Slack / Discord Markdown Text
+    # 1. Slack / Discord Markdown Text
     lines = [
         f"📡 *[X-AI-Radar] AI & Agents 데일리 핫이슈 ({today_str})*",
-        f"🌐 *웹에서 전체보기*: <{github_report_url}|GitHub에서 리포트 열기>",
+        f"📁 리포트 파일: `{os.path.basename(report_file)}`",
         "───────────────────────────────"
     ]
     for i, p in enumerate(top_posts, 1):
@@ -155,12 +132,11 @@ def send_notifications(summary_data):
         except Exception as e:
             print(f"⚠️ Discord notification error: {e}", file=sys.stderr)
             
-    # 3. Telegram Bot Dispatch (HTML Message + File Attachment)
+    # 2. Telegram Bot Dispatch (Summary HTML + Direct .md Attachment)
     if tg_token and tg_chat_id:
         try:
             tg_lines = [
                 f"📡 <b>[X-AI-Radar] 오늘의 AI &amp; Agents 핫이슈 요약 ({html.escape(today_str)})</b>",
-                f"🌐 <b><a href=\"{github_report_url}\">👉 웹에서 리포트 전체보기 (GitHub)</a></b>",
                 "───────────────────────────────"
             ]
             for i, p in enumerate(top_posts, 1):
@@ -176,22 +152,24 @@ def send_notifications(summary_data):
                 tg_lines.append(f"🇰🇷 <b>핵심 요약</b>: <i>\"{ko_text}...\"</i>")
                 tg_lines.append(f"🔗 <a href=\"{url}\">트윗 원문 보기</a>\n")
                 
+            tg_lines.append("───────────────────────────────")
+            tg_lines.append("📎 <i>상세 전체 리포트는 아래 첨부된 마크다운 파일을 확인하세요.</i>")
             tg_html = "\n".join(tg_lines)
             
-            # Step A: Send message with clickable web link
+            # Step A: Send clean text summary
             tg_url = f"https://api.telegram.org/bot{tg_token}/sendMessage"
             payload = json.dumps({
                 "chat_id": tg_chat_id,
                 "text": tg_html,
                 "parse_mode": "HTML",
-                "disable_web_page_preview": False
+                "disable_web_page_preview": True
             }).encode("utf-8")
             req = urllib.request.Request(tg_url, data=payload, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=8):
                 print("✅ Live Report text dispatched to Telegram!")
                 
             # Step B: Attach the physical .md report file directly in chat
-            send_telegram_document(tg_token, tg_chat_id, report_file, caption=f"📄 [X-AI-Radar] {today_str} 일일 전체 리포트 마크다운 파일")
+            send_telegram_document(tg_token, tg_chat_id, report_file, caption=f"📄 [X-AI-Radar] {today_str} 일일 전체 리포트 파일")
             
         except Exception as e:
             print(f"⚠️ Telegram notification error: {e}", file=sys.stderr)
