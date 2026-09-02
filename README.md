@@ -3,17 +3,16 @@
 <p align="center">
   <b>Multi-Domain Autonomous Intelligence & Blog Ideation Radar</b><br>
   Powered by <b>Antigravity Browser Subagent (<code>/browser</code>)</b> and <b>Gemini 3.7 Flash</b>.<br>
-  <i>⚡ Dual Engine: AI & Agents Tech Radar (~17s) + Elementary & Middle School Edu-Blog Radar (3 Daily Items)</i><br>
-  <i>💻 100% Cross-Platform: macOS, Windows (Batch / PowerShell), and Linux Supported.</i>
+  <i>⚡ Dual Engine: AI & Tech Radar (~17s) + Elementary & Middle School Edu-Blog Radar (3 Daily Items)</i><br>
+  <i>💻 100% Cross-Platform: Unified CLI for macOS, Windows (Batch / PowerShell), and Linux.</i>
 </p>
 
 <p align="center">
   <a href="#-dual-intelligence-engines">Dual Engines</a> •
   <a href="#-key-features">Key Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-quick-start">Quick Start (macOS / Windows)</a> •
-  <a href="#-customizing-topics">Customizing Topics</a> •
   <a href="#-project-structure">Project Structure</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-customizing-topics">Customizing Topics</a> •
   <a href="./README_KO.md">한국어 설명서 (Korean)</a>
 </p>
 
@@ -21,19 +20,21 @@
 
 ## 🚀 Dual Intelligence Engines
 
-X-AI-Radar features two specialized, turnkey intelligence engines that deliver automated briefings to your **Telegram (`@Radar4All_bot`)**, Slack, Discord, and Markdown reports:
+X-AI-Radar features two specialized, turnkey intelligence engines that deliver automated briefings to your **Telegram (`@Radar4All_bot` & `@edunewsradar_bot`)**, Slack, Discord, and Markdown reports:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 1. 🤖 X-AI-Radar (Tech Engine)                                              │
 │    • Target: Global AI, Autonomous Agents, LLM, MCP, and GitHub Trending    │
 │    • Latency: ~17 seconds via Chrome CDP Media Resource Blocker             │
-│    • Runner: python scripts/collector.py (or scripts/run_radar.bat)        │
+│    • Command: python radar.py --ai                                          │
+│    • Telegram: @Radar4All_bot                                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 2. 🎓 Edu-Blog Radar (Education & Parent Blog Engine)                       │
 │    • Target: Elementary/Middle School Fun Study Tips, Seasonal Study Items  │
 │    • Output: Top 3 Actionable Blog Topic Outlines & SEO Hashtags            │
-│    • Runner: python scripts/edu_collector.py (or scripts/run_edu_radar.bat)│
+│    • Command: python radar.py --edu                                         │
+│    • Telegram: @edunewsradar_bot (학습블로그 아이템)                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,82 +43,41 @@ X-AI-Radar features two specialized, turnkey intelligence engines that deliver a
 ## 🌟 Key Features
 
 - **⚡ Blazing Fast Ingestion**: Uses Chrome DevTools Protocol (CDP) with media resource blocking (`*.mp4`, `*.jpg`, trackers) and parallel adapter thread pools to deliver full reports in under 18 seconds.
-- **💻 Turnkey Cross-Platform (macOS / Windows / Linux)**: Dedicated one-click launchers for macOS/Linux (`.sh`), Windows Command Prompt (`.bat`), and PowerShell (`.ps1`).
+- **💻 Unified CLI (`radar.py`)**: Single command execution across macOS, Windows, and Linux (`python radar.py --all`, `--ai`, `--edu`, or `--browser`).
 - **🎯 3-Item Edu-Blog Generator**: Analyzes parent and student concerns from Naver and Google search to produce ready-to-publish blog drafts (Hook titles, 3-step outlines, and SEO hashtags).
+- **📱 Dual Telegram Bot Routing**: Automatically dispatches Tech summaries to `@Radar4All_bot` (Korean translated) and Educational blog ideas to `@edunewsradar_bot`.
 - **Zero-Cost & Ban-Free**: Reuses your local Chrome session (Port 9223). Zero expensive API tiers or fragile scraping tokens.
 - **State Memory & Velocity Scoring**: Tracks hourly growth delta (Views/h, Bookmarks/h) via `data/history.json` to prioritize breakout (`[RISING]`) topics.
-- **📱 Telegram Korean Translation Dispatch**: Automatically translates foreign tech posts into fluent Korean and sends alerts directly to `@Radar4All_bot`.
 - **🛡️ Strictly Read-Only (100% Safe)**: Enforces zero-mutation policy (no likes, retweets, replies, or follows).
 
 ---
 
-## 🏗️ Architecture
-
-```mermaid
-graph TD
-    subgraph S1 [1. Multi-Source Ingestion]
-        A1[X Precision Search Queries]
-        A2[GitHub Trending AI Repositories]
-        A3[Hacker News AI Discussions]
-        A4[Naver Education & Parent Search Trends]
-    end
-
-    subgraph S2 [2. Analysis & Ideation Engine]
-        B1[CDP Media and Resource Blocker]
-        B2[State Memory History Cache]
-        B3[Hourly Velocity Scoring Engine]
-        B4[Edu-Blog 3-Item Planner and Outliner]
-    end
-
-    subgraph S3 [3. Multi-Channel Distribution]
-        C1[Daily Markdown Reports in reports/]
-        C2[Antigravity Chat Briefing]
-        C3[Telegram Bot @Radar4All_bot in Korean]
-        C4[Webhook Alerts: Slack and Discord]
-    end
-
-    A1 --> B1
-    A2 --> B3
-    A3 --> B3
-    A4 --> B4
-    B1 --> B2
-    B2 --> B3
-    B3 --> C1
-    B3 --> C3
-    B4 --> C1
-    B4 --> C3
-    B3 --> C2
-    B3 --> C4
-```
-
----
-
-## 📂 Project Structure
+## 📂 Optimized Project Structure
 
 ```text
 X-AI-Radar/
+├── radar.py                   # 🌟 Unified Root CLI Orchestrator (--all, --ai, --edu, --browser)
+├── run.bat                    # 🚀 Windows One-Click Root Launcher (Double Click)
+├── run.sh                     # 🚀 macOS/Linux Root Runner
+├── requirements.txt           # Python project dependencies (pyyaml, websocket-client)
+├── .env.example               # Secret credentials template
+├── .env                       # Local private Telegram & Webhook secrets (Git Ignored)
+├── config.yaml                # Unified search queries, scoring, and schedule configuration
 ├── AGENTS.md                  # Autonomous agent operating manual (DSA standard)
-├── SKILL.md                   # Antigravity custom skill specification (/x-ai-radar)
-├── config.yaml                # Unified configuration (Search queries, scoring, webhooks)
+├── SKILL.md                   # Antigravity custom skill specification (/x-ai-radar, /edu-blog-radar)
 ├── README.md                  # Global English documentation
 ├── README_KO.md               # Korean user manual (한국어 가이드)
-├── .gitignore                 # Security & secret isolation rules
-├── .env                       # Local secrets (Telegram bot token & chat id, git-ignored)
 ├── data/
 │   ├── .gitkeep
-│   └── history.json           # Local cache for state memory & velocity tracking (ignored)
+│   └── history.json           # State memory & velocity tracking cache (Git Ignored)
 ├── scripts/
 │   ├── collector.py           # Core v2.1 high-speed AI & tech intelligence engine (~17s)
 │   ├── edu_collector.py       # Edu-Blog Radar: Elementary & Middle school 3-item planner
 │   ├── notifier.py            # Multi-channel webhook & Telegram Korean translator
 │   ├── setup_telegram.py      # Interactive Telegram bot link helper
-│   ├── launch_chrome.sh       # Chrome CDP launcher for macOS / Linux
-│   ├── launch_chrome.bat      # Chrome CDP launcher for Windows CMD
-│   ├── launch_chrome.ps1      # Chrome CDP launcher for Windows PowerShell
-│   ├── run_radar.sh           # AI Radar runner for macOS / Linux
-│   ├── run_radar.bat          # AI Radar runner for Windows
-│   ├── run_edu_radar.sh       # Edu-Blog Radar runner for macOS / Linux
-│   ├── run_edu_radar.bat      # Edu-Blog Radar runner for Windows
+│   ├── launch_chrome.bat      # Windows Chrome CDP launcher
+│   ├── launch_chrome.ps1      # Windows PowerShell Chrome CDP launcher
+│   ├── launch_chrome.sh       # macOS/Linux Chrome CDP launcher
 │   └── adapters/
 │       ├── github_trending.py # GitHub Trending AI adapter
 │       ├── hackernews.py      # Hacker News AI discussions adapter
@@ -130,36 +90,34 @@ X-AI-Radar/
 
 ---
 
-## 🚀 Quick Start (macOS / Windows / Linux)
+## 🚀 Quick Start (Unified CLI)
 
 ### 1. Launch Chrome in Remote Debugging Mode (Port 9223)
 
-* **macOS / Linux**:
+* **macOS / Linux / Windows (Unified)**:
   ```bash
-  ./scripts/launch_chrome.sh
+  python radar.py --browser
   ```
-* **Windows (Command Prompt / Double Click)**:
-  ```cmd
-  scripts\launch_chrome.bat
-  ```
-* **Windows (PowerShell)**:
-  ```powershell
-  .\scripts\launch_chrome.ps1
-  ```
+  *(Or double click `scripts/launch_chrome.bat` on Windows)*
 
 > [!NOTE]
 > In the opened Chrome window, perform a **one-time login to X.com**. The session is saved in an isolated directory (`chrome_agent_profile`) and will be reused automatically.
 
-### 2. Run the Intelligence Engines
+### 2. Run the Intelligence Radars
 
-#### A. AI & Tech Intelligence Radar (X-AI-Radar)
-* **In Antigravity Chat**: Type `/x-ai-radar`
-* **Via Terminal**: `python scripts/collector.py`
-* **Windows One-Click**: Double-click `scripts\run_radar.bat`
-
-#### B. Educational & Parent Blog Radar (Edu-Blog Radar)
-* **Via Terminal**: `python scripts/edu_collector.py`
-* **Windows One-Click**: Double-click `scripts\run_edu_radar.bat`
+* **Run Both Radars (Default)**:
+  ```bash
+  python radar.py --all
+  ```
+* **Run AI Tech Radar Only**:
+  ```bash
+  python radar.py --ai
+  ```
+* **Run Educational Blog Radar Only**:
+  ```bash
+  python radar.py --edu
+  ```
+* **Windows One-Click**: Double-click `run.bat`
 
 ### 3. Schedule Daily Autonomous Execution (08:15 KST)
 Register the recurring task with Antigravity:
