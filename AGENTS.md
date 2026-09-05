@@ -38,11 +38,11 @@ graph TD
         B4[Edu-Blog 3-Item Planner]
     end
 
-    subgraph S3 [3. Multi-Channel Distribution]
+    subgraph S3 [3. Report and optional delivery]
         C1[Daily Markdown Reports in reports/]
         C2[Antigravity Chat Briefing]
-        C3[Telegram Bot @Radar4All_bot in Korean]
-        C4[Webhook Alerts: Slack and Discord]
+        C3[Telegram delivery: separately approved]
+        C4[Webhook delivery: separately approved]
     end
 
     A1 --> B1
@@ -52,11 +52,11 @@ graph TD
     B1 --> B2
     B2 --> B3
     B3 --> C1
-    B3 --> C3
+    B3 -. explicit approval .-> C3
     B4 --> C1
-    B4 --> C3
+    B4 -. explicit approval .-> C3
     B3 --> C2
-    B3 --> C4
+    B3 -. explicit approval .-> C4
 ```
 
 ---
@@ -66,7 +66,9 @@ graph TD
 ### A. Maker Role (Browser Subagent / Ingestion Engine)
 - Attaches to Chrome CDP (Port 9223) or requests Naver search endpoints.
 - Enables `Network.setBlockedURLs` (`*.mp4`, `*.m3u8`, `*.jpg`, `*.webp`, `*analytics*`).
-- Ingests tweet feeds or education queries without message desync (`cdp_send_sync`).
+- Reads X/browser sources and education queries without message desync
+  (`cdp_send_sync`). Browser and X collection are read-only: do not use any
+  engagement control or submit a form.
 
 ### B. Parallel Adapter Workers (`ThreadPoolExecutor`)
 - Concurrently queries GitHub Search API, Hacker News API, and Naver Education search trends.
@@ -75,16 +77,27 @@ graph TD
 - Validates 24-hour publish timestamp constraints.
 - Updates state memory (`data/history.json`) and calculates growth velocity.
 - Synthesizes 3-item educational blog topic plans.
-- Dispatches Korean-translated summaries to Telegram (`@Radar4All_bot`).
+- Renders Korean-translated summaries for reports. It does not deliver them.
+
+### D. Delivery boundary
+
+- Telegram delivery to `@Radar4All_bot` is an external write and requires
+  explicit user authorization covering the destination and content, or an
+  explicitly authorized recurring delivery scope. A request to research,
+  collect, rank, or render a report is not delivery authorization.
+- Slack and Discord webhooks follow the same authorization rule. Reuse a
+  matching approval under the global rules; ask only for uncovered scope.
+- Verify the destination and final Korean text before an approved delivery;
+  do not expose tokens or read `.env` values into logs or reports.
 
 ---
 
 ## 4. Zero-Trust Security Guardrails
 
 > [!CAUTION]
-> **Strict Read-Only Enforcement**:
+> **Strict Read-Only Source Collection**:
 > - Agents MUST NEVER trigger like, repost, reply, follow, bookmark, or quote actions on X.
-> - Agents MUST NEVER submit forms or execute web mutations.
+> - During source collection, agents MUST NEVER submit forms or execute web mutations. Separately authorized delivery is governed by the delivery boundary above.
 
 > [!IMPORTANT]
 > **Secret & Cache Isolation**:
